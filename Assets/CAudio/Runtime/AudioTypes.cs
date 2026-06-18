@@ -24,6 +24,61 @@ namespace CAudio
         WeightedRandom
     }
 
+    /// <summary>音频系统日志级别。</summary>
+    public enum AudioLogLevel
+    {
+        None,
+        Error,
+        Warning,
+        Verbose
+    }
+
+    /// <summary>音频播放失败原因。</summary>
+    public enum AudioPlayFailureReason
+    {
+        None,
+        NotInitialized,
+        MissingDatabase,
+        EmptyKey,
+        CueNotFound,
+        MissingCue,
+        MissingClip,
+        ProviderFailed
+    }
+
+    /// <summary>音频播放结果。</summary>
+    public readonly struct AudioPlayResult
+    {
+        public readonly AudioPlaybackHandle Handle;
+        public readonly AudioPlayFailureReason FailureReason;
+        public readonly string Message;
+
+        /// <summary>获取是否播放成功。</summary>
+        public bool Success => Handle != null && FailureReason == AudioPlayFailureReason.None;
+
+        /// <summary>创建播放结果。</summary>
+        public AudioPlayResult(AudioPlaybackHandle handle, AudioPlayFailureReason failureReason, string message)
+        {
+            Handle = handle;
+            FailureReason = failureReason;
+            Message = message;
+        }
+    }
+
+    /// <summary>音频数据库校验结果。</summary>
+    public readonly struct AudioDatabaseValidationIssue
+    {
+        public readonly AudioLogLevel Level;
+        public readonly string Message;
+
+        /// <summary>创建校验结果。</summary>
+        public AudioDatabaseValidationIssue(AudioLogLevel level, string message)
+        {
+            Level = level;
+            Message = message;
+        }
+    }
+
     /// <summary>音频剪辑引用，当前优先使用直连剪辑，后续可平滑切到地址化资源。</summary>
     [Serializable]
     public sealed class AudioClipReference
@@ -71,5 +126,6 @@ namespace CAudio
         public float? MinDistance;
         public float? MaxDistance;
         public int? Priority;
+        public bool ApplyVoiceDucking = true;
     }
 }

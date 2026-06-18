@@ -62,6 +62,13 @@ namespace CAudio
         /// <summary>获取输出组。</summary>
         public AudioMixerGroup OutputGroup => outputGroup;
 
+        /// <summary>设置基础标识。</summary>
+        public void SetIdentity(string valueKey, string valueDisplayName)
+        {
+            key = valueKey;
+            displayName = valueDisplayName;
+        }
+
         /// <summary>选择一个剪辑选项。</summary>
         public AudioClipOption PickClip()
         {

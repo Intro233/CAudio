@@ -12,6 +12,9 @@ namespace CAudio
         private static IAudioClipProvider clipProvider = new DirectAudioClipProvider();
         private static bool initialized;
 
+        /// <summary>获取是否已初始化。</summary>
+        public static bool IsInitialized => initialized;
+
         /// <summary>初始化音频系统。</summary>
         public static void Initialize(AudioDatabase db = null)
         {
@@ -57,11 +60,25 @@ namespace CAudio
             return service.Play(key, options);
         }
 
+        /// <summary>尝试播放数据库音频。</summary>
+        public static AudioPlayResult TryPlay(string key, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            return service.TryPlay(key, options);
+        }
+
         /// <summary>播放直连剪辑。</summary>
         public static AudioPlaybackHandle Play(AudioClip clip, AudioPlayOptions options = null)
         {
             EnsureInitialized();
             return service.Play(clip, options);
+        }
+
+        /// <summary>尝试播放直连剪辑。</summary>
+        public static AudioPlayResult TryPlay(AudioClip clip, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            return service.TryPlay(clip, options);
         }
 
         /// <summary>在世界坐标播放数据库音频。</summary>
@@ -111,6 +128,45 @@ namespace CAudio
             return service.Play(cue, options);
         }
 
+        /// <summary>尝试播放数据库配置。</summary>
+        public static AudioPlayResult TryPlay(AudioCueData cue, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            return service.TryPlay(cue, options);
+        }
+
+        /// <summary>播放音效。</summary>
+        public static AudioPlaybackHandle PlaySfx(string key, AudioPlayOptions options = null)
+        {
+            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            resolved.Channel = AudioChannel.Sfx;
+            return Play(key, resolved);
+        }
+
+        /// <summary>播放界面音效。</summary>
+        public static AudioPlaybackHandle PlayUi(string key, AudioPlayOptions options = null)
+        {
+            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            resolved.Channel = AudioChannel.Ui;
+            return Play(key, resolved);
+        }
+
+        /// <summary>播放语音。</summary>
+        public static AudioPlaybackHandle PlayVoice(string key, AudioPlayOptions options = null)
+        {
+            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            resolved.Channel = AudioChannel.Voice;
+            return Play(key, resolved);
+        }
+
+        /// <summary>播放环境音。</summary>
+        public static AudioPlaybackHandle PlayAmbience(string key, AudioPlayOptions options = null)
+        {
+            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            resolved.Channel = AudioChannel.Ambience;
+            return Play(key, resolved);
+        }
+
         /// <summary>播放音乐。</summary>
         public static AudioPlaybackHandle PlayMusic(string key, AudioPlayOptions options = null)
         {
@@ -134,6 +190,39 @@ namespace CAudio
             }
 
             service.StopAll(fadeOutSeconds);
+        }
+
+        /// <summary>停止指定Key音频。</summary>
+        public static void Stop(string key, float fadeOutSeconds = 0f)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.Stop(key, fadeOutSeconds);
+        }
+
+        /// <summary>停止指定播放句柄。</summary>
+        public static void Stop(AudioPlaybackHandle handle, float fadeOutSeconds = -1f)
+        {
+            if (handle == null)
+            {
+                return;
+            }
+
+            handle.Stop(fadeOutSeconds);
+        }
+
+        /// <summary>停止指定通道音频。</summary>
+        public static void StopChannel(AudioChannel channel, float fadeOutSeconds = 0f)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.StopChannel(channel, fadeOutSeconds);
         }
 
         /// <summary>暂停全部音频。</summary>
@@ -170,6 +259,19 @@ namespace CAudio
         {
             EnsureInitialized();
             service.SetChannelVolume(channel, volume);
+        }
+
+        /// <summary>尝试获取音频配置。</summary>
+        public static bool TryGetCue(string key, out AudioCueData cue)
+        {
+            EnsureInitialized();
+            if (database == null)
+            {
+                cue = null;
+                return false;
+            }
+
+            return database.TryGetCue(key, out cue);
         }
 
         /// <summary>每帧驱动音频服务。</summary>

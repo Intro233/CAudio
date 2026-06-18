@@ -14,6 +14,7 @@ namespace CAudio.EditorTools
         private SerializedObject serializedDatabase;
         private Vector2 scrollPosition;
         private string searchText;
+        private System.Collections.Generic.List<AudioDatabaseValidationIssue> validationIssues;
 
         /// <summary>打开窗口。</summary>
         [MenuItem("CAudio/Audio Database")]
@@ -42,7 +43,11 @@ namespace CAudio.EditorTools
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             DrawDatabaseStats();
             DrawCueList();
+            DrawCueAssetList();
             DrawBusList();
+            DrawMixerSettings();
+            DrawDebugSettings();
+            DrawValidationIssues();
             EditorGUILayout.EndScrollView();
             serializedDatabase.ApplyModifiedProperties();
             if (GUI.changed && database != null)
@@ -80,9 +85,19 @@ namespace CAudio.EditorTools
                 AddCue();
             }
 
+            if (GUILayout.Button("新建Cue", EditorStyles.toolbarButton, GUILayout.Width(80f)) && database != null)
+            {
+                CreateCueAsset();
+            }
+
             if (GUILayout.Button("添加总线", EditorStyles.toolbarButton, GUILayout.Width(80f)) && database != null)
             {
                 AddBus();
+            }
+
+            if (GUILayout.Button("校验", EditorStyles.toolbarButton, GUILayout.Width(60f)) && database != null)
+            {
+                validationIssues = database.Validate();
             }
 
             searchText = GUILayout.TextField(searchText, EditorStyles.toolbarSearchField, GUILayout.MinWidth(160f));
@@ -95,9 +110,10 @@ namespace CAudio.EditorTools
         {
             using (new EditorGUILayout.VerticalScope("box"))
             {
-            EditorGUILayout.LabelField("数据库信息", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("条目数量", database.Cues != null ? database.Cues.Count.ToString() : "0");
-        }
+                EditorGUILayout.LabelField("数据库信息", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("内嵌条目数量", database.Cues != null ? database.Cues.Count.ToString() : "0");
+                EditorGUILayout.LabelField("独立Cue数量", database.CueAssets != null ? database.CueAssets.Count.ToString() : "0");
+            }
         }
 
         /// <summary>绘制音频条目列表。</summary>
@@ -136,6 +152,80 @@ namespace CAudio.EditorTools
             {
                 EditorGUILayout.LabelField("总线配置", EditorStyles.boldLabel);
                 DrawBusElements(busesProp);
+            }
+        }
+
+        /// <summary>绘制独立Cue资产列表。</summary>
+        private void DrawCueAssetList()
+        {
+            SerializedProperty cueAssetsProp = serializedDatabase.FindProperty("cueAssets");
+            if (cueAssetsProp == null)
+            {
+                return;
+            }
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("独立Cue资产", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(cueAssetsProp, true);
+            }
+        }
+
+        /// <summary>绘制混音器配置。</summary>
+        private void DrawMixerSettings()
+        {
+            SerializedProperty mixerProp = serializedDatabase.FindProperty("mixerSettings");
+            if (mixerProp == null)
+            {
+                return;
+            }
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("混音器与Ducking", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(mixerProp, true);
+            }
+        }
+
+        /// <summary>绘制调试配置。</summary>
+        private void DrawDebugSettings()
+        {
+            SerializedProperty debugProp = serializedDatabase.FindProperty("debugSettings");
+            if (debugProp == null)
+            {
+                return;
+            }
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("调试配置", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(debugProp, true);
+            }
+        }
+
+        /// <summary>绘制校验结果。</summary>
+        private void DrawValidationIssues()
+        {
+            if (validationIssues == null)
+            {
+                return;
+            }
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("校验结果", EditorStyles.boldLabel);
+                if (validationIssues.Count == 0)
+                {
+                    EditorGUILayout.HelpBox("未发现问题。", MessageType.Info);
+                    return;
+                }
+
+                for (int i = 0; i < validationIssues.Count; i++)
+                {
+                    AudioDatabaseValidationIssue issue = validationIssues[i];
+                    MessageType type = issue.Level == AudioLogLevel.Error ? MessageType.Error : MessageType.Warning;
+                    EditorGUILayout.HelpBox(issue.Message, type);
+                }
             }
         }
 
@@ -242,6 +332,41 @@ namespace CAudio.EditorTools
             database = asset;
             serializedDatabase = new SerializedObject(database);
             Selection.activeObject = database;
+        }
+
+        /// <summary>创建独立Cue资产。</summary>
+        private void CreateCueAsset()
+        {
+            if (!AssetDatabase.IsValidFolder(DefaultFolder))
+            {
+                CreateFolders(DefaultFolder);
+            }
+
+            string path = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultFolder, "AudioCue.asset"));
+            AudioCueAsset asset = CreateInstance<AudioCueAsset>();
+            asset.Data.SetIdentity(Path.GetFileNameWithoutExtension(path).ToLowerInvariant(), Path.GetFileNameWithoutExtension(path));
+            AssetDatabase.CreateAsset(asset, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            AddCueAssetReference(asset);
+            Selection.activeObject = asset;
+        }
+
+        /// <summary>添加独立Cue引用。</summary>
+        private void AddCueAssetReference(AudioCueAsset asset)
+        {
+            SerializedProperty cueAssetsProp = serializedDatabase.FindProperty("cueAssets");
+            if (cueAssetsProp == null)
+            {
+                return;
+            }
+
+            int index = cueAssetsProp.arraySize;
+            cueAssetsProp.InsertArrayElementAtIndex(index);
+            cueAssetsProp.GetArrayElementAtIndex(index).objectReferenceValue = asset;
+            serializedDatabase.ApplyModifiedProperties();
+            EditorUtility.SetDirty(database);
+            database.RebuildCache();
         }
 
         /// <summary>添加一个默认条目。</summary>

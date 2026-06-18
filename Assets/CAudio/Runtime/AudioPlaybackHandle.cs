@@ -9,6 +9,7 @@ namespace CAudio
         internal AudioService Service;
         internal AudioSource Source;
         internal AudioChannel Channel;
+        internal string Key;
         internal AudioClip Clip;
         internal Transform FollowTarget;
         internal Vector3 WorldPosition;
@@ -22,6 +23,7 @@ namespace CAudio
         internal float Delay;
         internal bool WaitingForDelay;
         internal bool Started;
+        internal bool ApplyVoiceDucking;
         internal float Priority;
         internal float Elapsed;
         internal float StartVolume;
