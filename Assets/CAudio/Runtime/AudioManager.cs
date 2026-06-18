@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Audio;
+using System;
 
 namespace CAudio
 {
@@ -67,6 +68,13 @@ namespace CAudio
             return service.TryPlay(key, options);
         }
 
+        /// <summary>异步播放数据库音频。</summary>
+        public static AudioAsyncPlayRequest PlayAsync(string key, AudioPlayOptions options = null, Action<AudioPlayResult> onComplete = null)
+        {
+            EnsureInitialized();
+            return service.PlayAsync(key, options, onComplete);
+        }
+
         /// <summary>播放直连剪辑。</summary>
         public static AudioPlaybackHandle Play(AudioClip clip, AudioPlayOptions options = null)
         {
@@ -84,7 +92,7 @@ namespace CAudio
         /// <summary>在世界坐标播放数据库音频。</summary>
         public static AudioPlaybackHandle PlayAt(string key, Vector3 position, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.Position = position;
             resolved.SpatialOverride = true;
             resolved.SpatialBlend = 1f;
@@ -94,7 +102,7 @@ namespace CAudio
         /// <summary>在世界坐标播放直连剪辑。</summary>
         public static AudioPlaybackHandle PlayAt(AudioClip clip, Vector3 position, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.Position = position;
             resolved.SpatialOverride = true;
             resolved.SpatialBlend = 1f;
@@ -104,7 +112,7 @@ namespace CAudio
         /// <summary>跟随目标播放数据库音频。</summary>
         public static AudioPlaybackHandle PlayFollow(string key, Transform target, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.FollowTarget = target;
             resolved.SpatialOverride = true;
             resolved.SpatialBlend = 1f;
@@ -114,7 +122,7 @@ namespace CAudio
         /// <summary>跟随目标播放直连剪辑。</summary>
         public static AudioPlaybackHandle PlayFollow(AudioClip clip, Transform target, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.FollowTarget = target;
             resolved.SpatialOverride = true;
             resolved.SpatialBlend = 1f;
@@ -135,10 +143,17 @@ namespace CAudio
             return service.TryPlay(cue, options);
         }
 
+        /// <summary>异步播放数据库配置。</summary>
+        public static AudioAsyncPlayRequest PlayAsync(AudioCueData cue, AudioPlayOptions options = null, Action<AudioPlayResult> onComplete = null)
+        {
+            EnsureInitialized();
+            return service.PlayAsync(cue, options, onComplete);
+        }
+
         /// <summary>播放音效。</summary>
         public static AudioPlaybackHandle PlaySfx(string key, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.Channel = AudioChannel.Sfx;
             return Play(key, resolved);
         }
@@ -146,7 +161,7 @@ namespace CAudio
         /// <summary>播放界面音效。</summary>
         public static AudioPlaybackHandle PlayUi(string key, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.Channel = AudioChannel.Ui;
             return Play(key, resolved);
         }
@@ -154,7 +169,7 @@ namespace CAudio
         /// <summary>播放语音。</summary>
         public static AudioPlaybackHandle PlayVoice(string key, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.Channel = AudioChannel.Voice;
             return Play(key, resolved);
         }
@@ -162,7 +177,7 @@ namespace CAudio
         /// <summary>播放环境音。</summary>
         public static AudioPlaybackHandle PlayAmbience(string key, AudioPlayOptions options = null)
         {
-            AudioPlayOptions resolved = options ?? new AudioPlayOptions();
+            AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
             resolved.Channel = AudioChannel.Ambience;
             return Play(key, resolved);
         }
@@ -174,11 +189,64 @@ namespace CAudio
             return service.PlayMusic(key, options);
         }
 
+        /// <summary>交叉淡入淡出播放音乐。</summary>
+        public static AudioPlaybackHandle CrossfadeMusic(string key, float fadeSeconds, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            return service.CrossfadeMusic(key, fadeSeconds, options);
+        }
+
+        /// <summary>将音乐加入播放队列。</summary>
+        public static void QueueMusic(string key, float fadeSeconds = 0f, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            service.QueueMusic(key, fadeSeconds, options);
+        }
+
         /// <summary>播放音乐剪辑。</summary>
         public static AudioPlaybackHandle PlayMusic(AudioClip clip, AudioPlayOptions options = null)
         {
             EnsureInitialized();
             return service.PlayMusic(clip, options);
+        }
+
+        /// <summary>交叉淡入淡出播放音乐剪辑。</summary>
+        public static AudioPlaybackHandle CrossfadeMusic(AudioClip clip, float fadeSeconds, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            return service.CrossfadeMusic(clip, fadeSeconds, options);
+        }
+
+        /// <summary>将音乐剪辑加入播放队列。</summary>
+        public static void QueueMusic(AudioClip clip, float fadeSeconds = 0f, AudioPlayOptions options = null)
+        {
+            EnsureInitialized();
+            service.QueueMusic(clip, fadeSeconds, options);
+        }
+
+        /// <summary>清空音乐队列。</summary>
+        public static void ClearMusicQueue()
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.ClearMusicQueue();
+        }
+
+        /// <summary>过渡到混音器快照。</summary>
+        public static void TransitionToSnapshot(AudioMixerSnapshot snapshot, float transitionSeconds)
+        {
+            EnsureInitialized();
+            service.TransitionToSnapshot(snapshot, transitionSeconds);
+        }
+
+        /// <summary>平滑设置混音器浮点参数。</summary>
+        public static bool TransitionMixerParameter(string parameter, float targetValue, float duration)
+        {
+            EnsureInitialized();
+            return service.TransitionMixerParameter(parameter, targetValue, duration);
         }
 
         /// <summary>停止全部音频。</summary>
@@ -201,6 +269,28 @@ namespace CAudio
             }
 
             service.Stop(key, fadeOutSeconds);
+        }
+
+        /// <summary>停止指定Key前缀音频。</summary>
+        public static void StopByKeyPrefix(string keyPrefix, float fadeOutSeconds = 0f)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.StopByKeyPrefix(keyPrefix, fadeOutSeconds);
+        }
+
+        /// <summary>停止指定分组音频。</summary>
+        public static void StopGroup(string group, float fadeOutSeconds = 0f)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.StopGroup(group, fadeOutSeconds);
         }
 
         /// <summary>停止指定播放句柄。</summary>
@@ -247,6 +337,28 @@ namespace CAudio
             service.ResumeAll();
         }
 
+        /// <summary>暂停指定通道音频。</summary>
+        public static void PauseChannel(AudioChannel channel)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.PauseChannel(channel);
+        }
+
+        /// <summary>恢复指定通道音频。</summary>
+        public static void ResumeChannel(AudioChannel channel)
+        {
+            if (!initialized)
+            {
+                return;
+            }
+
+            service.ResumeChannel(channel);
+        }
+
         /// <summary>设置主音量。</summary>
         public static void SetMasterVolume(float volume)
         {
@@ -259,6 +371,27 @@ namespace CAudio
         {
             EnsureInitialized();
             service.SetChannelVolume(channel, volume);
+        }
+
+        /// <summary>设置通道静音。</summary>
+        public static void SetChannelMute(AudioChannel channel, bool mute)
+        {
+            EnsureInitialized();
+            service.SetChannelMute(channel, mute);
+        }
+
+        /// <summary>设置独奏通道。</summary>
+        public static void SetSoloChannel(AudioChannel channel)
+        {
+            EnsureInitialized();
+            service.SetSoloChannel(channel);
+        }
+
+        /// <summary>清除独奏通道。</summary>
+        public static void ClearSoloChannel()
+        {
+            EnsureInitialized();
+            service.SetSoloChannel(null);
         }
 
         /// <summary>尝试获取音频配置。</summary>
@@ -303,7 +436,7 @@ namespace CAudio
             }
 
             GameObject go = new GameObject("[CAudio] AudioManager");
-            Object.DontDestroyOnLoad(go);
+            UnityEngine.Object.DontDestroyOnLoad(go);
             host = go.AddComponent<AudioManagerHost>();
         }
 
@@ -313,7 +446,7 @@ namespace CAudio
             /// <summary>初始化宿主。</summary>
             private void Awake()
             {
-                Object.DontDestroyOnLoad(gameObject);
+                UnityEngine.Object.DontDestroyOnLoad(gameObject);
             }
 
             /// <summary>驱动音频服务。</summary>

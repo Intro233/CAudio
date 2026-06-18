@@ -29,6 +29,44 @@ namespace CAudio
         /// <summary>获取混音器配置。</summary>
         public AudioMixerControlSettings MixerSettings => mixerSettings;
 
+        /// <summary>添加内嵌音频配置。</summary>
+        public void AddCue(AudioCueData cue)
+        {
+            if (cue == null)
+            {
+                return;
+            }
+
+            cues.Add(cue);
+            RebuildCache();
+        }
+
+        /// <summary>清空内嵌音频配置。</summary>
+        public void ClearCues()
+        {
+            cues.Clear();
+            RebuildCache();
+        }
+
+        /// <summary>添加独立音频配置资产。</summary>
+        public void AddCueAsset(AudioCueAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            cueAssets.Add(asset);
+            RebuildCache();
+        }
+
+        /// <summary>清空独立音频配置资产引用。</summary>
+        public void ClearCueAssets()
+        {
+            cueAssets.Clear();
+            RebuildCache();
+        }
+
         /// <summary>重建运行时缓存。</summary>
         public void RebuildCache()
         {
@@ -181,6 +219,10 @@ namespace CAudio
             if (!cue.HasClips())
             {
                 issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{cue.Key} 没有配置Clip。"));
+            }
+            else if (!cue.HasResolvableClipReference())
+            {
+                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{cue.Key} 没有可解析的Clip引用。"));
             }
         }
     }

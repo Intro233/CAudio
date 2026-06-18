@@ -10,6 +10,7 @@ namespace CAudio
         internal AudioSource Source;
         internal AudioChannel Channel;
         internal string Key;
+        internal string Group;
         internal AudioClip Clip;
         internal Transform FollowTarget;
         internal Vector3 WorldPosition;
@@ -35,6 +36,18 @@ namespace CAudio
 
         /// <summary>获取是否仍在播放。</summary>
         public bool IsPlaying => Source != null && Source.isPlaying && !HasStopped;
+
+        /// <summary>获取是否已停止并等待回收。</summary>
+        public bool IsStopped => HasStopped;
+
+        /// <summary>获取播放Key。</summary>
+        public string PlaybackKey => Key;
+
+        /// <summary>获取播放分组。</summary>
+        public string PlaybackGroup => Group;
+
+        /// <summary>获取播放通道。</summary>
+        public AudioChannel PlaybackChannel => Channel;
 
         /// <summary>停止播放。</summary>
         public void Stop(float fadeOutSeconds = -1f)
@@ -108,7 +121,7 @@ namespace CAudio
             {
                 StopFadeOutTime -= deltaTime;
                 float t = StopFadeOutDuration > 0f ? Mathf.Clamp01(StopFadeOutTime / StopFadeOutDuration) : 0f;
-                Source.volume = StopStartVolume * t;
+                Source.volume = StopStartVolume * t * masterVolume * channelVolume;
                 if (StopFadeOutTime <= 0f)
                 {
                     Finish();
@@ -162,6 +175,16 @@ namespace CAudio
         /// <summary>开始渐隐停止。</summary>
         internal void BeginStop(float fadeOutSeconds)
         {
+            if (HasStopped)
+            {
+                return;
+            }
+
+            if (StopRequested && fadeOutSeconds >= StopFadeOutTime)
+            {
+                return;
+            }
+
             StopRequested = true;
             StopFadeOutTime = Mathf.Max(0f, fadeOutSeconds);
             StopFadeOutDuration = StopFadeOutTime;
@@ -172,6 +195,10 @@ namespace CAudio
             else if (Source != null)
             {
                 StopStartVolume = Source.volume;
+                if (WaitingForDelay && !Source.isPlaying)
+                {
+                    Source.Stop();
+                }
             }
         }
 

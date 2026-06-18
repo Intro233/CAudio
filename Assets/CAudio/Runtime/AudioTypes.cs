@@ -21,7 +21,10 @@ namespace CAudio
     public enum AudioSelectionMode
     {
         Random,
-        WeightedRandom
+        WeightedRandom,
+        Sequential,
+        Shuffle,
+        NoImmediateRepeat
     }
 
     /// <summary>音频系统日志级别。</summary>
@@ -43,7 +46,10 @@ namespace CAudio
         CueNotFound,
         MissingCue,
         MissingClip,
-        ProviderFailed
+        ProviderFailed,
+        Cancelled,
+        Cooldown,
+        MaxSimultaneous
     }
 
     /// <summary>音频播放结果。</summary>
@@ -91,6 +97,69 @@ namespace CAudio
 
         /// <summary>获取预留的资源键。</summary>
         public string AddressKey => addressKey;
+
+        /// <summary>创建空引用。</summary>
+        public AudioClipReference()
+        {
+        }
+
+        /// <summary>创建直连剪辑引用。</summary>
+        public AudioClipReference(AudioClip directClip)
+        {
+            this.directClip = directClip;
+        }
+
+        /// <summary>创建地址化资源引用。</summary>
+        public AudioClipReference(string addressKey)
+        {
+            this.addressKey = addressKey;
+        }
+    }
+
+    /// <summary>异步播放请求。</summary>
+    public sealed class AudioAsyncPlayRequest
+    {
+        private readonly Action<AudioPlayResult> onComplete;
+
+        /// <summary>获取是否完成。</summary>
+        public bool IsDone { get; private set; }
+
+        /// <summary>获取是否已取消。</summary>
+        public bool IsCancelled { get; private set; }
+
+        /// <summary>获取播放结果。</summary>
+        public AudioPlayResult Result { get; private set; }
+
+        /// <summary>创建异步播放请求。</summary>
+        public AudioAsyncPlayRequest(Action<AudioPlayResult> onComplete = null)
+        {
+            this.onComplete = onComplete;
+        }
+
+        /// <summary>取消请求。</summary>
+        public void Cancel()
+        {
+            if (IsDone)
+            {
+                return;
+            }
+
+            IsCancelled = true;
+            Complete(new AudioPlayResult(null, AudioPlayFailureReason.Cancelled, "异步播放请求已取消。"));
+        }
+
+        /// <summary>完成请求。</summary>
+        internal void Complete(AudioPlayResult result)
+        {
+            if (IsDone)
+            {
+                return;
+            }
+
+            Result = result;
+            IsDone = true;
+            onComplete?.Invoke(result);
+        }
     }
 
     /// <summary>单个可播放剪辑选项。</summary>
@@ -105,6 +174,24 @@ namespace CAudio
 
         /// <summary>获取权重。</summary>
         public float Weight => weight;
+
+        /// <summary>创建默认剪辑选项。</summary>
+        public AudioClipOption()
+        {
+        }
+
+        /// <summary>创建直连剪辑选项。</summary>
+        public AudioClipOption(AudioClip clip, float weight = 1f)
+            : this(new AudioClipReference(clip), weight)
+        {
+        }
+
+        /// <summary>创建剪辑引用选项。</summary>
+        public AudioClipOption(AudioClipReference clip, float weight = 1f)
+        {
+            this.clip = clip ?? new AudioClipReference();
+            this.weight = Mathf.Max(0f, weight);
+        }
     }
 
     /// <summary>播放时的临时覆盖参数。</summary>
@@ -127,5 +214,36 @@ namespace CAudio
         public float? MaxDistance;
         public int? Priority;
         public bool ApplyVoiceDucking = true;
+
+        /// <summary>创建一份可安全修改的副本。</summary>
+        public AudioPlayOptions Clone()
+        {
+            return new AudioPlayOptions
+            {
+                Position = Position,
+                FollowTarget = FollowTarget,
+                Volume = Volume,
+                Pitch = Pitch,
+                Delay = Delay,
+                Loop = Loop,
+                FadeIn = FadeIn,
+                FadeOut = FadeOut,
+                Channel = Channel,
+                OutputGroup = OutputGroup,
+                ReplaceSameChannel = ReplaceSameChannel,
+                SpatialOverride = SpatialOverride,
+                SpatialBlend = SpatialBlend,
+                MinDistance = MinDistance,
+                MaxDistance = MaxDistance,
+                Priority = Priority,
+                ApplyVoiceDucking = ApplyVoiceDucking
+            };
+        }
+
+        /// <summary>获取一份可安全修改的选项。</summary>
+        public static AudioPlayOptions CopyOrDefault(AudioPlayOptions options)
+        {
+            return options != null ? options.Clone() : new AudioPlayOptions();
+        }
     }
 }

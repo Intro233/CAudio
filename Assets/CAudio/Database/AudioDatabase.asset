@@ -13,4 +13,14 @@ MonoBehaviour:
   m_Name: AudioDatabase
   m_EditorClassIdentifier: 
   cues: []
+  cueAssets: []
   buses: []
+  debugSettings:
+    logLevel: 2
+    logSuccessfulPlay: 0
+  mixerSettings:
+    mixer: {fileID: 0}
+    volumeParameters: []
+    enableVoiceDucking: 1
+    duckMusicVolume: 0.35
+    duckFadeSpeed: 8

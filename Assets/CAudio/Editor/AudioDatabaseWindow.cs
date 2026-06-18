@@ -14,6 +14,9 @@ namespace CAudio.EditorTools
         private SerializedObject serializedDatabase;
         private Vector2 scrollPosition;
         private string searchText;
+        private bool filterByChannel;
+        private bool filterIssuesOnly;
+        private AudioChannel channelFilter = AudioChannel.Sfx;
         private System.Collections.Generic.List<AudioDatabaseValidationIssue> validationIssues;
 
         /// <summary>打开窗口。</summary>
@@ -90,6 +93,11 @@ namespace CAudio.EditorTools
                 CreateCueAsset();
             }
 
+            if (GUILayout.Button("导入选中Clip", EditorStyles.toolbarButton, GUILayout.Width(100f)) && database != null)
+            {
+                ImportSelectedClips();
+            }
+
             if (GUILayout.Button("添加总线", EditorStyles.toolbarButton, GUILayout.Width(80f)) && database != null)
             {
                 AddBus();
@@ -99,6 +107,14 @@ namespace CAudio.EditorTools
             {
                 validationIssues = database.Validate();
             }
+
+            filterByChannel = GUILayout.Toggle(filterByChannel, "按通道", EditorStyles.toolbarButton, GUILayout.Width(60f));
+            using (new EditorGUI.DisabledScope(!filterByChannel))
+            {
+                channelFilter = (AudioChannel)EditorGUILayout.EnumPopup(channelFilter, GUILayout.Width(90f));
+            }
+
+            filterIssuesOnly = GUILayout.Toggle(filterIssuesOnly, "仅问题", EditorStyles.toolbarButton, GUILayout.Width(60f));
 
             searchText = GUILayout.TextField(searchText, EditorStyles.toolbarSearchField, GUILayout.MinWidth(160f));
 
@@ -128,14 +144,7 @@ namespace CAudio.EditorTools
             using (new EditorGUILayout.VerticalScope("box"))
             {
                 EditorGUILayout.LabelField("音频条目", EditorStyles.boldLabel);
-                if (string.IsNullOrWhiteSpace(searchText))
-                {
-                    DrawCueElements(cuesProp);
-                }
-                else
-                {
-                    DrawFilteredCues(cuesProp);
-                }
+                DrawCueElements(cuesProp);
             }
         }
 
@@ -235,29 +244,64 @@ namespace CAudio.EditorTools
             for (int i = 0; i < cuesProp.arraySize; i++)
             {
                 SerializedProperty element = cuesProp.GetArrayElementAtIndex(i);
+                if (!ShouldShowCue(element))
+                {
+                    continue;
+                }
+
                 using (new EditorGUILayout.VerticalScope("box"))
                 {
+                    bool duplicate = false;
+                    bool moveUp = false;
+                    bool moveDown = false;
+                    bool delete = false;
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.PropertyField(element, GUIContent.none, true);
+                    if (GUILayout.Button("复制", GUILayout.Width(40f)))
+                    {
+                        duplicate = true;
+                    }
+
                     if (GUILayout.Button("上移", GUILayout.Width(50f)) && i > 0)
+                    {
+                        moveUp = true;
+                    }
+
+                    if (GUILayout.Button("下移", GUILayout.Width(50f)) && i < cuesProp.arraySize - 1)
+                    {
+                        moveDown = true;
+                    }
+
+                    if (GUILayout.Button("删", GUILayout.Width(30f)) && ConfirmDelete("删除音频条目", "确定要删除这个音频条目吗？"))
+                    {
+                        delete = true;
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+
+                    if (duplicate)
+                    {
+                        DuplicateCue(cuesProp, i);
+                        break;
+                    }
+
+                    if (moveUp)
                     {
                         cuesProp.MoveArrayElement(i, i - 1);
                         break;
                     }
 
-                    if (GUILayout.Button("下移", GUILayout.Width(50f)) && i < cuesProp.arraySize - 1)
+                    if (moveDown)
                     {
                         cuesProp.MoveArrayElement(i, i + 1);
                         break;
                     }
 
-                    if (GUILayout.Button("删", GUILayout.Width(30f)))
+                    if (delete)
                     {
                         cuesProp.DeleteArrayElementAtIndex(i);
                         break;
                     }
-
-                    EditorGUILayout.EndHorizontal();
                 }
             }
         }
@@ -270,27 +314,45 @@ namespace CAudio.EditorTools
                 SerializedProperty element = busesProp.GetArrayElementAtIndex(i);
                 using (new EditorGUILayout.VerticalScope("box"))
                 {
+                    bool moveUp = false;
+                    bool moveDown = false;
+                    bool delete = false;
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.PropertyField(element, GUIContent.none, true);
                     if (GUILayout.Button("上移", GUILayout.Width(50f)) && i > 0)
+                    {
+                        moveUp = true;
+                    }
+
+                    if (GUILayout.Button("下移", GUILayout.Width(50f)) && i < busesProp.arraySize - 1)
+                    {
+                        moveDown = true;
+                    }
+
+                    if (GUILayout.Button("删", GUILayout.Width(30f)) && ConfirmDelete("删除总线", "确定要删除这个总线配置吗？"))
+                    {
+                        delete = true;
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+
+                    if (moveUp)
                     {
                         busesProp.MoveArrayElement(i, i - 1);
                         break;
                     }
 
-                    if (GUILayout.Button("下移", GUILayout.Width(50f)) && i < busesProp.arraySize - 1)
+                    if (moveDown)
                     {
                         busesProp.MoveArrayElement(i, i + 1);
                         break;
                     }
 
-                    if (GUILayout.Button("删", GUILayout.Width(30f)))
+                    if (delete)
                     {
                         busesProp.DeleteArrayElementAtIndex(i);
                         break;
                     }
-
-                    EditorGUILayout.EndHorizontal();
                 }
             }
         }
@@ -314,6 +376,103 @@ namespace CAudio.EditorTools
 
                 EditorGUILayout.PropertyField(element, true);
             }
+        }
+
+        /// <summary>判断条目是否符合当前筛选。</summary>
+        private bool ShouldShowCue(SerializedProperty element)
+        {
+            if (filterByChannel)
+            {
+                SerializedProperty channelProp = element.FindPropertyRelative("channel");
+                if (channelProp == null || channelProp.enumValueIndex != (int)channelFilter)
+                {
+                    return false;
+                }
+            }
+
+            if (filterIssuesOnly && !HasCueIssue(element))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                return true;
+            }
+
+            SerializedProperty keyProp = element.FindPropertyRelative("key");
+            SerializedProperty nameProp = element.FindPropertyRelative("displayName");
+            string key = keyProp != null ? keyProp.stringValue : string.Empty;
+            string display = nameProp != null ? nameProp.stringValue : string.Empty;
+            return key.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   display.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>判断条目是否存在常见配置问题。</summary>
+        private bool HasCueIssue(SerializedProperty element)
+        {
+            SerializedProperty keyProp = element.FindPropertyRelative("key");
+            SerializedProperty clipsProp = element.FindPropertyRelative("clips");
+            string key = keyProp != null ? keyProp.stringValue : string.Empty;
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return true;
+            }
+
+            if (clipsProp == null || clipsProp.arraySize == 0)
+            {
+                return true;
+            }
+
+            return CountCueKey(key) > 1;
+        }
+
+        /// <summary>统计指定Key在内嵌条目中的出现次数。</summary>
+        private int CountCueKey(string key)
+        {
+            SerializedProperty cuesProp = serializedDatabase != null ? serializedDatabase.FindProperty("cues") : null;
+            if (cuesProp == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < cuesProp.arraySize; i++)
+            {
+                SerializedProperty item = cuesProp.GetArrayElementAtIndex(i);
+                SerializedProperty keyProp = item.FindPropertyRelative("key");
+                if (keyProp != null && string.Equals(keyProp.stringValue, key, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>复制一个音频条目。</summary>
+        private void DuplicateCue(SerializedProperty cuesProp, int index)
+        {
+            cuesProp.InsertArrayElementAtIndex(index);
+            cuesProp.MoveArrayElement(index, index + 1);
+            SerializedProperty duplicate = cuesProp.GetArrayElementAtIndex(index + 1);
+            SerializedProperty keyProp = duplicate.FindPropertyRelative("key");
+            SerializedProperty nameProp = duplicate.FindPropertyRelative("displayName");
+            if (keyProp != null)
+            {
+                keyProp.stringValue = GenerateUniqueCueKey(string.IsNullOrWhiteSpace(keyProp.stringValue) ? "cue" : keyProp.stringValue + "_copy");
+            }
+
+            if (nameProp != null && !string.IsNullOrWhiteSpace(nameProp.stringValue))
+            {
+                nameProp.stringValue += " Copy";
+            }
+        }
+
+        /// <summary>确认删除操作。</summary>
+        private bool ConfirmDelete(string title, string message)
+        {
+            return EditorUtility.DisplayDialog(title, message, "删除", "取消");
         }
 
         /// <summary>创建数据库资产。</summary>
@@ -352,6 +511,38 @@ namespace CAudio.EditorTools
             Selection.activeObject = asset;
         }
 
+        /// <summary>从当前选中的音频剪辑批量创建条目。</summary>
+        private void ImportSelectedClips()
+        {
+            int importedCount = 0;
+            Object[] selectedObjects = Selection.objects;
+            for (int i = 0; i < selectedObjects.Length; i++)
+            {
+                AudioClip clip = selectedObjects[i] as AudioClip;
+                if (clip == null)
+                {
+                    continue;
+                }
+
+                string key = GenerateUniqueCueKey(NormalizeKey(clip.name));
+                AudioCueData cue = new AudioCueData();
+                cue.SetIdentity(key, clip.name);
+                cue.AddClip(clip);
+                database.AddCue(cue);
+                importedCount++;
+            }
+
+            if (importedCount == 0)
+            {
+                EditorUtility.DisplayDialog("导入选中Clip", "请先在 Project 窗口中选择一个或多个 AudioClip。", "知道了");
+                return;
+            }
+
+            serializedDatabase = new SerializedObject(database);
+            EditorUtility.SetDirty(database);
+            validationIssues = database.Validate();
+        }
+
         /// <summary>添加独立Cue引用。</summary>
         private void AddCueAssetReference(AudioCueAsset asset)
         {
@@ -385,7 +576,7 @@ namespace CAudio.EditorTools
             SerializedProperty nameProp = element.FindPropertyRelative("displayName");
             if (keyProp != null)
             {
-                keyProp.stringValue = $"cue_{index + 1}";
+                keyProp.stringValue = GenerateUniqueCueKey($"cue_{index + 1}");
             }
 
             if (nameProp != null)
@@ -396,6 +587,42 @@ namespace CAudio.EditorTools
             serializedDatabase.ApplyModifiedProperties();
             EditorUtility.SetDirty(database);
             database.RebuildCache();
+        }
+
+        /// <summary>生成不重复的条目键。</summary>
+        private string GenerateUniqueCueKey(string baseKey)
+        {
+            string normalized = NormalizeKey(baseKey);
+            string candidate = normalized;
+            int suffix = 1;
+            while (database != null && database.TryGetCue(candidate, out _))
+            {
+                candidate = $"{normalized}_{suffix}";
+                suffix++;
+            }
+
+            return candidate;
+        }
+
+        /// <summary>规范化条目键。</summary>
+        private string NormalizeKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "cue";
+            }
+
+            char[] chars = value.Trim().ToLowerInvariant().ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                char c = chars[i];
+                if (!char.IsLetterOrDigit(c) && c != '_' && c != '-')
+                {
+                    chars[i] = '_';
+                }
+            }
+
+            return new string(chars);
         }
 
         /// <summary>添加一个默认总线。</summary>

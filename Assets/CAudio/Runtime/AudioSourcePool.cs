@@ -34,6 +34,7 @@ namespace CAudio
                 AudioSource source = cache.Pop();
                 if (source != null)
                 {
+                    ResetSource(source);
                     source.gameObject.SetActive(true);
                     return source;
                 }
@@ -51,7 +52,7 @@ namespace CAudio
             }
 
             source.Stop();
-            source.clip = null;
+            ResetSource(source);
             source.transform.SetParent(root, false);
             source.gameObject.SetActive(false);
             cache.Push(source);
@@ -84,6 +85,23 @@ namespace CAudio
             source.loop = false;
             allSources.Add(source);
             return source;
+        }
+
+        /// <summary>重置音源，避免复用时继承上一次播放状态。</summary>
+        private void ResetSource(AudioSource source)
+        {
+            source.clip = null;
+            source.outputAudioMixerGroup = null;
+            source.loop = false;
+            source.volume = 1f;
+            source.pitch = 1f;
+            source.priority = 128;
+            source.spatialBlend = 0f;
+            source.minDistance = 1f;
+            source.maxDistance = 500f;
+            source.transform.localPosition = Vector3.zero;
+            source.transform.localRotation = Quaternion.identity;
+            source.transform.localScale = Vector3.one;
         }
     }
 }
