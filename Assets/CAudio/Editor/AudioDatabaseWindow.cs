@@ -1,0 +1,317 @@
+#if UNITY_EDITOR
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+
+namespace CAudio.EditorTools
+{
+    /// <summary>音频数据库管理窗口。</summary>
+    public sealed class AudioDatabaseWindow : EditorWindow
+    {
+        private const string DefaultFolder = "Assets/CAudio/Database";
+
+        private AudioDatabase database;
+        private SerializedObject serializedDatabase;
+        private Vector2 scrollPosition;
+        private string searchText;
+
+        /// <summary>打开窗口。</summary>
+        [MenuItem("CAudio/Audio Database")]
+        public static void Open()
+        {
+            GetWindow<AudioDatabaseWindow>("Audio Database");
+        }
+
+        /// <summary>绘制窗口界面。</summary>
+        private void OnGUI()
+        {
+            DrawToolbar();
+
+            if (database == null)
+            {
+                EditorGUILayout.HelpBox("请选择或创建一个 AudioDatabase。", MessageType.Info);
+                return;
+            }
+
+            if (serializedDatabase == null || serializedDatabase.targetObject != database)
+            {
+                serializedDatabase = new SerializedObject(database);
+            }
+
+            serializedDatabase.Update();
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            DrawDatabaseStats();
+            DrawCueList();
+            DrawBusList();
+            EditorGUILayout.EndScrollView();
+            serializedDatabase.ApplyModifiedProperties();
+            if (GUI.changed && database != null)
+            {
+                database.RebuildCache();
+                EditorUtility.SetDirty(database);
+            }
+        }
+
+        /// <summary>绘制顶部工具栏。</summary>
+        private void DrawToolbar()
+        {
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+
+            AudioDatabase selected = (AudioDatabase)EditorGUILayout.ObjectField(database, typeof(AudioDatabase), false, GUILayout.MinWidth(180f));
+            if (selected != database)
+            {
+                database = selected;
+                serializedDatabase = database != null ? new SerializedObject(database) : null;
+            }
+
+            if (GUILayout.Button("新建", EditorStyles.toolbarButton, GUILayout.Width(60f)))
+            {
+                CreateDatabaseAsset();
+            }
+
+            if (GUILayout.Button("刷新", EditorStyles.toolbarButton, GUILayout.Width(60f)) && database != null)
+            {
+                database.RebuildCache();
+                EditorUtility.SetDirty(database);
+            }
+
+            if (GUILayout.Button("添加条目", EditorStyles.toolbarButton, GUILayout.Width(80f)) && database != null)
+            {
+                AddCue();
+            }
+
+            if (GUILayout.Button("添加总线", EditorStyles.toolbarButton, GUILayout.Width(80f)) && database != null)
+            {
+                AddBus();
+            }
+
+            searchText = GUILayout.TextField(searchText, EditorStyles.toolbarSearchField, GUILayout.MinWidth(160f));
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        /// <summary>绘制数据库统计。</summary>
+        private void DrawDatabaseStats()
+        {
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+            EditorGUILayout.LabelField("数据库信息", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("条目数量", database.Cues != null ? database.Cues.Count.ToString() : "0");
+        }
+        }
+
+        /// <summary>绘制音频条目列表。</summary>
+        private void DrawCueList()
+        {
+            SerializedProperty cuesProp = serializedDatabase.FindProperty("cues");
+            if (cuesProp == null)
+            {
+                return;
+            }
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("音频条目", EditorStyles.boldLabel);
+                if (string.IsNullOrWhiteSpace(searchText))
+                {
+                    DrawCueElements(cuesProp);
+                }
+                else
+                {
+                    DrawFilteredCues(cuesProp);
+                }
+            }
+        }
+
+        /// <summary>绘制总线列表。</summary>
+        private void DrawBusList()
+        {
+            SerializedProperty busesProp = serializedDatabase.FindProperty("buses");
+            if (busesProp == null)
+            {
+                return;
+            }
+
+            using (new EditorGUILayout.VerticalScope("box"))
+            {
+                EditorGUILayout.LabelField("总线配置", EditorStyles.boldLabel);
+                DrawBusElements(busesProp);
+            }
+        }
+
+        /// <summary>绘制全部条目。</summary>
+        private void DrawCueElements(SerializedProperty cuesProp)
+        {
+            for (int i = 0; i < cuesProp.arraySize; i++)
+            {
+                SerializedProperty element = cuesProp.GetArrayElementAtIndex(i);
+                using (new EditorGUILayout.VerticalScope("box"))
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.PropertyField(element, GUIContent.none, true);
+                    if (GUILayout.Button("上移", GUILayout.Width(50f)) && i > 0)
+                    {
+                        cuesProp.MoveArrayElement(i, i - 1);
+                        break;
+                    }
+
+                    if (GUILayout.Button("下移", GUILayout.Width(50f)) && i < cuesProp.arraySize - 1)
+                    {
+                        cuesProp.MoveArrayElement(i, i + 1);
+                        break;
+                    }
+
+                    if (GUILayout.Button("删", GUILayout.Width(30f)))
+                    {
+                        cuesProp.DeleteArrayElementAtIndex(i);
+                        break;
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+        }
+
+        /// <summary>绘制全部总线。</summary>
+        private void DrawBusElements(SerializedProperty busesProp)
+        {
+            for (int i = 0; i < busesProp.arraySize; i++)
+            {
+                SerializedProperty element = busesProp.GetArrayElementAtIndex(i);
+                using (new EditorGUILayout.VerticalScope("box"))
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.PropertyField(element, GUIContent.none, true);
+                    if (GUILayout.Button("上移", GUILayout.Width(50f)) && i > 0)
+                    {
+                        busesProp.MoveArrayElement(i, i - 1);
+                        break;
+                    }
+
+                    if (GUILayout.Button("下移", GUILayout.Width(50f)) && i < busesProp.arraySize - 1)
+                    {
+                        busesProp.MoveArrayElement(i, i + 1);
+                        break;
+                    }
+
+                    if (GUILayout.Button("删", GUILayout.Width(30f)))
+                    {
+                        busesProp.DeleteArrayElementAtIndex(i);
+                        break;
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+        }
+
+        /// <summary>绘制筛选后的条目。</summary>
+        private void DrawFilteredCues(SerializedProperty cuesProp)
+        {
+            EditorGUILayout.LabelField("筛选结果");
+            for (int i = 0; i < cuesProp.arraySize; i++)
+            {
+                SerializedProperty element = cuesProp.GetArrayElementAtIndex(i);
+                SerializedProperty keyProp = element.FindPropertyRelative("key");
+                SerializedProperty nameProp = element.FindPropertyRelative("displayName");
+                string key = keyProp != null ? keyProp.stringValue : string.Empty;
+                string display = nameProp != null ? nameProp.stringValue : string.Empty;
+                if (key.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) < 0 &&
+                    display.IndexOf(searchText, System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                EditorGUILayout.PropertyField(element, true);
+            }
+        }
+
+        /// <summary>创建数据库资产。</summary>
+        private void CreateDatabaseAsset()
+        {
+            if (!AssetDatabase.IsValidFolder(DefaultFolder))
+            {
+                CreateFolders(DefaultFolder);
+            }
+
+            string path = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultFolder, "AudioDatabase.asset"));
+            AudioDatabase asset = CreateInstance<AudioDatabase>();
+            AssetDatabase.CreateAsset(asset, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            database = asset;
+            serializedDatabase = new SerializedObject(database);
+            Selection.activeObject = database;
+        }
+
+        /// <summary>添加一个默认条目。</summary>
+        private void AddCue()
+        {
+            SerializedProperty cuesProp = serializedDatabase.FindProperty("cues");
+            if (cuesProp == null)
+            {
+                return;
+            }
+
+            int index = cuesProp.arraySize;
+            cuesProp.InsertArrayElementAtIndex(index);
+            SerializedProperty element = cuesProp.GetArrayElementAtIndex(index);
+            SerializedProperty keyProp = element.FindPropertyRelative("key");
+            SerializedProperty nameProp = element.FindPropertyRelative("displayName");
+            if (keyProp != null)
+            {
+                keyProp.stringValue = $"cue_{index + 1}";
+            }
+
+            if (nameProp != null)
+            {
+                nameProp.stringValue = $"Cue {index + 1}";
+            }
+
+            serializedDatabase.ApplyModifiedProperties();
+            EditorUtility.SetDirty(database);
+            database.RebuildCache();
+        }
+
+        /// <summary>添加一个默认总线。</summary>
+        private void AddBus()
+        {
+            SerializedProperty busesProp = serializedDatabase.FindProperty("buses");
+            if (busesProp == null)
+            {
+                return;
+            }
+
+            int index = busesProp.arraySize;
+            busesProp.InsertArrayElementAtIndex(index);
+            SerializedProperty element = busesProp.GetArrayElementAtIndex(index);
+            SerializedProperty channelProp = element.FindPropertyRelative("channel");
+            if (channelProp != null)
+            {
+                channelProp.enumValueIndex = Mathf.Clamp(index, 0, System.Enum.GetValues(typeof(AudioChannel)).Length - 1);
+            }
+
+            serializedDatabase.ApplyModifiedProperties();
+            EditorUtility.SetDirty(database);
+            database.RebuildCache();
+        }
+
+        /// <summary>递归创建文件夹。</summary>
+        private void CreateFolders(string path)
+        {
+            string[] parts = path.Split('/');
+            string current = parts[0];
+            for (int i = 1; i < parts.Length; i++)
+            {
+                string next = current + "/" + parts[i];
+                if (!AssetDatabase.IsValidFolder(next))
+                {
+                    AssetDatabase.CreateFolder(current, parts[i]);
+                }
+
+                current = next;
+            }
+        }
+    }
+}
+#endif

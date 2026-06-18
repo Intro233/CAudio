@@ -1,0 +1,192 @@
+using UnityEngine;
+
+namespace CAudio
+{
+    /// <summary>音频播放句柄。</summary>
+    public sealed class AudioPlaybackHandle
+    {
+        internal int Id;
+        internal AudioService Service;
+        internal AudioSource Source;
+        internal AudioChannel Channel;
+        internal AudioClip Clip;
+        internal Transform FollowTarget;
+        internal Vector3 WorldPosition;
+        internal bool UseWorldPosition;
+        internal bool IsLoop;
+        internal bool ReplaceSameChannel;
+        internal float BaseVolume;
+        internal float BasePitch;
+        internal float FadeInTime;
+        internal float FadeOutTime;
+        internal float Delay;
+        internal bool WaitingForDelay;
+        internal bool Started;
+        internal float Priority;
+        internal float Elapsed;
+        internal float StartVolume;
+        internal float StopStartVolume;
+        internal bool StopRequested;
+        internal float StopFadeOutTime;
+        internal float StopFadeOutDuration;
+        internal bool HasStopped;
+
+        /// <summary>获取是否仍在播放。</summary>
+        public bool IsPlaying => Source != null && Source.isPlaying && !HasStopped;
+
+        /// <summary>停止播放。</summary>
+        public void Stop(float fadeOutSeconds = -1f)
+        {
+            if (HasStopped)
+            {
+                return;
+            }
+
+            if (Service != null)
+            {
+                Service.StopHandle(this, fadeOutSeconds);
+            }
+        }
+
+        /// <summary>暂停播放。</summary>
+        public void Pause()
+        {
+            if (Source == null || HasStopped)
+            {
+                return;
+            }
+
+            Source.Pause();
+        }
+
+        /// <summary>继续播放。</summary>
+        public void Resume()
+        {
+            if (Source == null || HasStopped)
+            {
+                return;
+            }
+
+            Source.UnPause();
+        }
+
+        /// <summary>设置基础音量。</summary>
+        public void SetVolume(float volume)
+        {
+            BaseVolume = Mathf.Max(0f, volume);
+        }
+
+        /// <summary>设置基础音调。</summary>
+        public void SetPitch(float pitch)
+        {
+            BasePitch = pitch;
+        }
+
+        /// <summary>更新播放状态。</summary>
+        internal bool Tick(float deltaTime, float masterVolume, float channelVolume)
+        {
+            if (HasStopped)
+            {
+                return true;
+            }
+
+            if (Source == null)
+            {
+                HasStopped = true;
+                return true;
+            }
+
+            if (FollowTarget != null)
+            {
+                WorldPosition = FollowTarget.position;
+                Source.transform.position = WorldPosition;
+            }
+
+            if (StopRequested)
+            {
+                StopFadeOutTime -= deltaTime;
+                float t = StopFadeOutDuration > 0f ? Mathf.Clamp01(StopFadeOutTime / StopFadeOutDuration) : 0f;
+                Source.volume = StopStartVolume * t;
+                if (StopFadeOutTime <= 0f)
+                {
+                    Finish();
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (WaitingForDelay)
+            {
+                Delay -= deltaTime;
+                if (Delay > 0f)
+                {
+                    return false;
+                }
+
+                if (!Source.isPlaying)
+                {
+                    return false;
+                }
+
+                WaitingForDelay = false;
+                Started = true;
+            }
+
+            Elapsed += deltaTime;
+
+            if (Source.isPlaying)
+            {
+                Started = true;
+            }
+
+            if (Started && !Source.loop && !Source.isPlaying)
+            {
+                Finish();
+                return true;
+            }
+
+            float fadeInFactor = 1f;
+            if (FadeInTime > 0f && Elapsed < FadeInTime)
+            {
+                fadeInFactor = Mathf.Clamp01(Elapsed / FadeInTime);
+            }
+
+            Source.volume = BaseVolume * fadeInFactor * masterVolume * channelVolume;
+            Source.pitch = BasePitch;
+            return false;
+        }
+
+        /// <summary>开始渐隐停止。</summary>
+        internal void BeginStop(float fadeOutSeconds)
+        {
+            StopRequested = true;
+            StopFadeOutTime = Mathf.Max(0f, fadeOutSeconds);
+            StopFadeOutDuration = StopFadeOutTime;
+            if (StopFadeOutTime <= 0f)
+            {
+                Finish();
+            }
+            else if (Source != null)
+            {
+                StopStartVolume = Source.volume;
+            }
+        }
+
+        /// <summary>完成回收。</summary>
+        internal void Finish()
+        {
+            if (HasStopped)
+            {
+                return;
+            }
+
+            HasStopped = true;
+            if (Source != null)
+            {
+                Source.Stop();
+                Source.clip = null;
+            }
+        }
+    }
+}
