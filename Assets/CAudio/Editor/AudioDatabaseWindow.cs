@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace CAudio.EditorTools
 {
@@ -11,6 +12,7 @@ namespace CAudio.EditorTools
     public sealed class AudioDatabaseWindow : EditorWindow
     {
         private const string DefaultFolder = "Assets/CAudio/Database";
+        private const string PresetMixerTemplateGuid = "ca0d10a0000000000000000000001002";
 
         private AudioDatabase database;
         private SerializedObject serializedDatabase;
@@ -194,7 +196,7 @@ namespace CAudio.EditorTools
             using (new EditorGUILayout.VerticalScope(sectionStyle))
             {
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Audio Database", headerTitleStyle);
+                EditorGUILayout.LabelField("音频数据库", headerTitleStyle);
                 GUILayout.FlexibleSpace();
                 DrawAssetPath();
                 EditorGUILayout.EndHorizontal();
@@ -303,7 +305,12 @@ namespace CAudio.EditorTools
                 EditorGUILayout.BeginHorizontal();
                 showBuses = EditorGUILayout.Foldout(showBuses, $"总线配置 ({busesProp.arraySize})", true, EditorStyles.foldoutHeader);
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button("添加总线", EditorStyles.miniButton, GUILayout.Width(74f)))
+                if (GUILayout.Button("CAudio预设", EditorStyles.miniButtonLeft, GUILayout.Width(86f)))
+                {
+                    CreatePresetBusConfiguration();
+                }
+
+                if (GUILayout.Button("添加总线", EditorStyles.miniButtonRight, GUILayout.Width(74f)))
                 {
                     AddBus();
                 }
@@ -474,7 +481,7 @@ namespace CAudio.EditorTools
             SerializedProperty clipsProp = element.FindPropertyRelative("clips");
             SerializedProperty loopProp = element.FindPropertyRelative("loop");
 
-            string key = keyProp != null && !string.IsNullOrWhiteSpace(keyProp.stringValue) ? keyProp.stringValue : "<Missing Key>";
+            string key = keyProp != null && !string.IsNullOrWhiteSpace(keyProp.stringValue) ? keyProp.stringValue : "<缺少 Key>";
             string display = nameProp != null ? nameProp.stringValue : string.Empty;
             string group = groupProp != null ? groupProp.stringValue : string.Empty;
             string channel = channelProp != null ? channelProp.enumDisplayNames[channelProp.enumValueIndex] : "Unknown";
@@ -496,15 +503,15 @@ namespace CAudio.EditorTools
 
             GUILayout.FlexibleSpace();
             DrawBadge(channel);
-            DrawBadge($"{clipCount} Clip");
+                DrawBadge($"{clipCount} 个 Clip");
             if (loopProp != null && loopProp.boolValue)
             {
-                DrawBadge("Loop");
+                DrawBadge("循环");
             }
 
             if (hasIssue)
             {
-                DrawBadge("Issue");
+                DrawBadge("问题");
             }
 
             EditorGUILayout.EndHorizontal();
@@ -939,6 +946,208 @@ namespace CAudio.EditorTools
             EditorUtility.SetDirty(database);
             database.RebuildCache();
             SetStatus("已添加默认总线配置。", MessageType.Info);
+        }
+
+        /// <summary>创建 CAudio 推荐总线和 Mixer。</summary>
+        private void CreatePresetBusConfiguration()
+        {
+            string message = "将创建一个新的 CAudio 预设 AudioMixer，并用 Master、Music、Sfx、Voice、Ambience、Ui、Custom 重建当前数据库的总线配置。\n\n当前 Mixer 设置和总线列表会被替换。创建前请确认已经保存需要保留的配置，是否继续？";
+            if (!EditorUtility.DisplayDialog("创建 CAudio 预设总线", message, "创建", "取消"))
+            {
+                return;
+            }
+
+            string templatePath = AssetDatabase.GUIDToAssetPath(PresetMixerTemplateGuid);
+            if (string.IsNullOrWhiteSpace(templatePath))
+            {
+                EditorUtility.DisplayDialog("创建 CAudio 预设总线", "找不到 CAudio 预设 Mixer 模板，请确认包内 Editor/Templates/CAudioPresetMixer.mixer 存在。", "知道了");
+                return;
+            }
+
+            string targetFolder = ResolveDatabaseFolder();
+            if (!AssetDatabase.IsValidFolder(targetFolder))
+            {
+                CreateFolders(targetFolder);
+            }
+
+            string mixerPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(targetFolder, "CAudioPresetMixer.mixer").Replace('\\', '/'));
+            if (!AssetDatabase.CopyAsset(templatePath, mixerPath))
+            {
+                EditorUtility.DisplayDialog("创建 CAudio 预设总线", $"复制 Mixer 模板失败：{mixerPath}", "知道了");
+                return;
+            }
+
+            AssetDatabase.ImportAsset(mixerPath);
+            AudioMixer mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(mixerPath);
+            if (mixer == null)
+            {
+                EditorUtility.DisplayDialog("创建 CAudio 预设总线", $"Mixer 创建后无法加载：{mixerPath}", "知道了");
+                return;
+            }
+
+            Dictionary<string, AudioMixerGroup> groups = LoadMixerGroups(mixerPath);
+            ApplyPresetMixerSettings(mixer);
+            ApplyPresetBuses(groups);
+            serializedDatabase.ApplyModifiedProperties();
+            database.RebuildCache();
+            EditorUtility.SetDirty(database);
+            AssetDatabase.SaveAssets();
+            RunValidation();
+            Selection.activeObject = mixer;
+            EditorGUIUtility.PingObject(mixer);
+            SetStatus($"已创建 CAudio 预设 Mixer 并重建总线：{mixerPath}", MessageType.Info);
+        }
+
+        /// <summary>读取 Mixer 中的所有分组。</summary>
+        private Dictionary<string, AudioMixerGroup> LoadMixerGroups(string mixerPath)
+        {
+            Dictionary<string, AudioMixerGroup> groups = new Dictionary<string, AudioMixerGroup>(StringComparer.OrdinalIgnoreCase);
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(mixerPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is AudioMixerGroup group && !groups.ContainsKey(group.name))
+                {
+                    groups.Add(group.name, group);
+                }
+            }
+
+            return groups;
+        }
+
+        /// <summary>写入预设 Mixer 设置。</summary>
+        private void ApplyPresetMixerSettings(AudioMixer mixer)
+        {
+            SerializedProperty mixerSettingsProp = serializedDatabase.FindProperty("mixerSettings");
+            if (mixerSettingsProp == null)
+            {
+                return;
+            }
+
+            SerializedProperty mixerProp = mixerSettingsProp.FindPropertyRelative("mixer");
+            if (mixerProp != null)
+            {
+                mixerProp.objectReferenceValue = mixer;
+            }
+
+            SerializedProperty duckingProp = mixerSettingsProp.FindPropertyRelative("enableVoiceDucking");
+            if (duckingProp != null)
+            {
+                duckingProp.boolValue = true;
+            }
+
+            SerializedProperty duckVolumeProp = mixerSettingsProp.FindPropertyRelative("duckMusicVolume");
+            if (duckVolumeProp != null)
+            {
+                duckVolumeProp.floatValue = 0.35f;
+            }
+
+            SerializedProperty duckSpeedProp = mixerSettingsProp.FindPropertyRelative("duckFadeSpeed");
+            if (duckSpeedProp != null)
+            {
+                duckSpeedProp.floatValue = 8f;
+            }
+        }
+
+        /// <summary>写入 CAudio 推荐总线。</summary>
+        private void ApplyPresetBuses(Dictionary<string, AudioMixerGroup> groups)
+        {
+            SerializedProperty busesProp = serializedDatabase.FindProperty("buses");
+            if (busesProp == null)
+            {
+                return;
+            }
+
+            AudioChannel[] channels =
+            {
+                AudioChannel.Master,
+                AudioChannel.Music,
+                AudioChannel.Sfx,
+                AudioChannel.Voice,
+                AudioChannel.Ambience,
+                AudioChannel.Ui,
+                AudioChannel.Custom
+            };
+
+            busesProp.arraySize = channels.Length;
+            for (int i = 0; i < channels.Length; i++)
+            {
+                AudioChannel channel = channels[i];
+                SerializedProperty element = busesProp.GetArrayElementAtIndex(i);
+                SerializedProperty channelProp = element.FindPropertyRelative("channel");
+                SerializedProperty outputGroupProp = element.FindPropertyRelative("outputGroup");
+                SerializedProperty volumeProp = element.FindPropertyRelative("volume");
+                SerializedProperty muteProp = element.FindPropertyRelative("mute");
+
+                if (channelProp != null)
+                {
+                    channelProp.enumValueIndex = (int)channel;
+                }
+
+                if (outputGroupProp != null)
+                {
+                    outputGroupProp.objectReferenceValue = ResolvePresetGroup(groups, channel);
+                }
+
+                if (volumeProp != null)
+                {
+                    volumeProp.floatValue = ResolvePresetVolume(channel);
+                }
+
+                if (muteProp != null)
+                {
+                    muteProp.boolValue = false;
+                }
+            }
+        }
+
+        /// <summary>按通道读取预设 Mixer 分组。</summary>
+        private AudioMixerGroup ResolvePresetGroup(Dictionary<string, AudioMixerGroup> groups, AudioChannel channel)
+        {
+            string groupName = channel == AudioChannel.Ui ? "UI" : channel.ToString();
+            if (groups.TryGetValue(groupName, out AudioMixerGroup group))
+            {
+                return group;
+            }
+
+            groups.TryGetValue("Master", out AudioMixerGroup master);
+            return master;
+        }
+
+        /// <summary>读取预设通道音量。</summary>
+        private float ResolvePresetVolume(AudioChannel channel)
+        {
+            switch (channel)
+            {
+                case AudioChannel.Music:
+                    return 0.8f;
+                case AudioChannel.Ambience:
+                    return 0.65f;
+                case AudioChannel.Ui:
+                    return 0.85f;
+                default:
+                    return 1f;
+            }
+        }
+
+        /// <summary>读取数据库所在目录。</summary>
+        private string ResolveDatabaseFolder()
+        {
+            string databasePath = database != null ? AssetDatabase.GetAssetPath(database) : null;
+            if (!string.IsNullOrWhiteSpace(databasePath))
+            {
+                if (databasePath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return DefaultFolder;
+                }
+
+                string folder = Path.GetDirectoryName(databasePath);
+                if (!string.IsNullOrWhiteSpace(folder))
+                {
+                    return folder.Replace('\\', '/');
+                }
+            }
+
+            return DefaultFolder;
         }
 
         /// <summary>生成不重复的条目键。</summary>

@@ -1,108 +1,52 @@
-# CAudio Release Checklist
+# CAudio 发布检查清单
 
-This checklist tracks the evidence required before marking the full iteration goal complete.
+这份清单用于记录发布前需要确认的证据和步骤。
 
-## Required Verification
+## 必需验证
 
-- Unity Console has no C# compile errors.
-- EditMode tests pass and produce `TestResults.xml`.
-- `git diff --check` passes.
-- README, quick start, changelog, version file, samples, runtime/editor/test assembly definitions are present.
-- `Assets/CAudio/package.json`, package README, package changelog, and package license are present.
-- Editor window can be opened without GUILayout state errors.
+- Unity Console 没有 C# 编译错误。
+- `git diff --check` 通过。
+- README、快速开始、变更日志、版本文件、示例、Runtime/Editor/Test 程序集定义均存在。
+- `Assets/CAudio/package.json`、包内 README、包内变更日志和包内 License 均存在。
+- 编辑器窗口可以打开，没有 GUILayout 状态错误。
 
-## Verification Commands
+## 验证命令
 
-Close any Unity Editor instance that has this project open, then run. Do not pass `-quit` with this Unity Test Framework version; the command-line test starter exits Unity after the run finishes.
-
-```powershell
-& "D:\Program\Unity\Editor\2022.3.62f3\Editor\Unity.exe" -batchmode -projectPath "D:\Program\Unity\Projects\CAudio" -runTests -testPlatform EditMode -testResults "D:\Program\Unity\Projects\CAudio\TestResults.xml" -logFile "D:\Program\Unity\Projects\CAudio\UnityTest.log"
-```
-
-Static check:
+静态检查：
 
 ```powershell
 git diff --check
 ```
 
-UPM package metadata check:
+UPM 包元数据检查：
 
 ```powershell
 Get-Content "Assets\CAudio\package.json" -Raw | ConvertFrom-Json
 ```
 
-Package Manager Git URL format:
+Package Manager Git URL 格式：
 
 ```text
 https://github.com/<user>/<repo>.git?path=/Assets/CAudio#master
 ```
 
-## Iteration 3 Evidence
+说明：后续不再默认启动 Unity EditMode 测试。如需测试，应先确认 Unity 未打开当前项目，再由使用者明确要求执行。
 
-- Encoding and text: source files, `README.md`, `QUICK_START.md`, and editor UI text read as UTF-8 Chinese.
-- Options safety: `AudioPlayOptions.Clone()` and `AudioPlayOptions.CopyOrDefault()` prevent playback helpers from mutating caller-owned options.
-- Lifecycle hardening: `AudioSourcePool` resets reused sources; stop fade avoids repeated long-fade resets.
-- Tests: EditMode tests cover options, cue selection, database validation, failure paths, cooldown, max simultaneous playback, async requests, and group stop.
-- Documentation: `QUICK_START.md`.
+## 包发布证据
 
-## Iteration 4 Evidence
+- `Assets/CAudio/package.json` 定义 `com.caudio.core`，版本为 `0.3.0`。
+- `Assets/CAudio/README.md`、`CHANGELOG.md`、`LICENSE.md` 和 `Documentation~/index.md` 均存在。
+- 包可通过 `?path=/Assets/CAudio#master` 的 Git URL 安装。
+- `Assets/CAudio/package.json` 注册了可导入示例 `功能展示`。
+- Addressables 仍通过 `CAudio.Runtime.asmdef` 的 `versionDefines` 保持可选。
 
-- `AudioDatabaseWindow` supports channel filtering, issue filtering, duplicate, delete confirmation, selected-clip import, validation display, and database statistics.
-- `AudioCueDataDrawer` gives Cue fields a stable editor layout.
-- `CAudio.Editor.asmdef` separates editor code from runtime code.
+## 当前已验证
 
-## Iteration 5 Evidence
+- `git diff --check` 通过。
+- 早前临时项目副本 `C:\Users\Nagisa\AppData\Local\Temp\CAudio_FourBatchTest_20260619_081744` 曾成功编译 Runtime、Editor、Samples 和 EditMode Tests 程序集。
+- 早前临时项目 EditMode 测试曾通过：28 total / 28 passed / 0 failed / 0 skipped。
 
-- `AudioAsyncPlayRequest`.
-- `AudioService.PlayAsync` and `AudioManager.PlayAsync`.
-- `AddressablesAudioClipProvider` is guarded by `CAUDIO_ADDRESSABLES`.
-- `CAudio.Runtime.asmdef` uses `versionDefines` so Addressables remains optional.
+## 当前注意事项
 
-## Iteration 6 Evidence
-
-- Music crossfade.
-- Music queue.
-- Mixer parameter transitions.
-- Snapshot transitions.
-- Channel pause/resume.
-- Mute and solo.
-- Cue cooldown.
-- Max simultaneous playback.
-- Selection modes: random, weighted random, sequential, shuffle, no immediate repeat.
-- Stop by key, key prefix, channel, group, handle, and all.
-
-## Iteration 7 Evidence
-
-- `README.md`.
-- `QUICK_START.md`.
-- `CHANGELOG.md`.
-- `VERSION`.
-- Runtime, Editor, and EditMode test asmdefs.
-- `Assets/CAudio/Samples` with `CAudioSampleController`.
-
-## Package Evidence
-
-- `Assets/CAudio/package.json` defines `com.caudio.core` version `0.3.0`.
-- `Assets/CAudio/README.md`, `CHANGELOG.md`, `LICENSE.md`, and `Documentation~/index.md` are present.
-- The package can be installed from a Git URL using `?path=/Assets/CAudio#master`.
-- `Assets/CAudio/package.json` registers the `Feature Showcase` importable sample.
-- Addressables remains optional through `CAudio.Runtime.asmdef` `versionDefines`.
-
-## Latest Verification
-
-- `git diff --check` passes.
-- A temporary project copy at `C:\Users\Nagisa\AppData\Local\Temp\CAudio_FourBatchTest_20260619_081744` compiled Runtime, Editor, Samples, and EditMode Tests assemblies successfully.
-- EditMode tests passed in the temporary project copy after removing `-quit`: `TestResults_EditMode.xml` reports 28 total, 28 passed, 0 failed, 0 skipped.
-
-## Current Known Blocker
-
-As of the latest check, Unity processes are still running with this project open. Unity rejects batchmode testing while the same project is already open, so `TestResults.xml` cannot be produced in the original project path until those editors are closed. The temporary project copy provides current compile and EditMode test evidence.
-
-Latest observed rejection:
-
-```text
-Aborting batchmode due to fatal error:
-It looks like another Unity instance is running with this project open.
-Multiple Unity instances cannot open the same project.
-Project: D:/Program/Unity/Projects/CAudio
-```
+- 当前示例目录临时使用 `Assets/CAudio/Samples`，方便在本项目内直接测试。
+- 发布为标准 UPM 包前，应按需要将示例目录改回 `Samples~`，并把 `package.json` 中的 sample path 改回 `Samples~/Feature Showcase`。

@@ -1,13 +1,13 @@
-# CAudio Package
+# CAudio 包
 
-CAudio can be installed as a Unity Package Manager Git dependency:
+CAudio 可以通过 Unity Package Manager 的 Git URL 安装：
 
 ```text
 https://github.com/<user>/<repo>.git?path=/Assets/CAudio#master
 ```
 
-Use `CAudio/Audio Database` to create and edit an `AudioDatabase`, then initialize the runtime with `AudioSystemBootstrap` or `AudioManager.Initialize`.
+使用 `CAudio/Audio Database` 创建和编辑 `AudioDatabase`，然后通过 `AudioSystemBootstrap` 或 `AudioManager.Initialize` 初始化运行时。
 
-The package includes an importable `Feature Showcase` sample. Import it from Package Manager, open `CAudioFeatureShowcase.unity`, and enter Play Mode to use the generated uGUI control panel.
+包内提供可导入示例 `功能展示`。通过 Package Manager 导入示例后，打开 `CAudioFeatureShowcase.unity` 并进入 Play Mode，即可使用自动生成的 uGUI 控制面板。
 
-For full usage, see `README.md` in this package.
+完整用法请阅读包内 `README.md`。

@@ -50,7 +50,7 @@ Assets/CAudio/
 https://github.com/<user>/<repo>.git?path=/Assets/CAudio#master
 ```
 
-包内提供可导入示例 `Feature Showcase`。安装包后，可在 Package Manager 的 Samples 区域点击 `Import`。
+包内提供可导入示例 `功能展示`。安装包后，可在 Package Manager 的 Samples 区域点击 `Import`。
 
 ### 直接复制
 
@@ -115,6 +115,8 @@ public sealed class GameAudioBootstrap : MonoBehaviour
 - Mixer 与 Voice Ducking 配置 `AudioMixerControlSettings`。
 
 查找 Cue 时 Key 不区分大小写。若存在重复 Key，缓存会保留先出现的配置，校验会报告重复。
+
+编辑器窗口的 `总线配置` 区域提供 `CAudio预设` 按钮。点击后会先弹出确认框，确认后自动创建 CAudio 推荐结构的 `AudioMixer`，并重建 Master、Music、Sfx、Voice、Ambience、Ui、Custom 总线配置。
 
 ### AudioCueData
 
@@ -416,6 +418,7 @@ CAudio/Audio Database
 - 复制、上移、下移、删除 Cue。
 - 校验数据库并显示问题。
 - 编辑 Mixer 与 Debug 配置。
+- 一键创建 CAudio 预设总线，并自动生成对应的 `AudioMixer`。
 
 校验会报告：
 

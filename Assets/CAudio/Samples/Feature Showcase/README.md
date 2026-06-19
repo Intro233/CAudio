@@ -1,20 +1,19 @@
-﻿# CAudio Feature Showcase
+# CAudio 功能展示
 
-This sample imports a ready-to-run uGUI scene for CAudio.
+这个示例提供一个可直接运行的 CAudio uGUI 展示场景。
 
-Open `Scenes/CAudioFeatureShowcase.unity`, enter Play Mode, and use the on-screen buttons to try:
+打开 `Scenes/CAudioFeatureShowcase.unity`，进入 Play Mode 后，场景会自动生成 uGUI 控制面板。你可以通过面板按钮体验：
 
-- UI, SFX, voice, ambience, and music playback.
-- Weighted random, sequential, and no-immediate-repeat cue selection.
-- Volume and pitch randomization.
-- Cue cooldown, max simultaneous playback, and pool limit failure results.
-- Direct clip playback, async playback, missing cue failure, and database lookup behavior.
-- Music playback, crossfade, and queueing.
-- Looping ambience with fade-in and fade-out.
-- 3D positional playback and follow-target playback.
-- Stop all, stop by key prefix, stop by group, stop by channel, and handle stop.
-- Master, Music, and Sfx volume control.
-- Sfx mute, Music solo, and solo clearing.
+- UI、SFX、语音、环境音和音乐播放。
+- 加权随机、顺序播放和避免连续重复的 Cue 选择方式。
+- 音量与音调随机变化。
+- Cue 冷却、最大同时播放数和音源池上限失败结果。
+- 直连 Clip 播放、异步播放、缺失 Cue 失败结果。
+- 音乐播放、交叉淡入淡出和音乐队列。
+- 带淡入淡出的循环环境音。
+- 3D 坐标播放和跟随目标播放。
+- 停止全部、按 Key 前缀停止、按分组停止、按通道停止和句柄停止。
+- Master、Music 和 Sfx 音量控制。
+- Sfx 静音、Music 独奏和清除独奏。
 
-The sample reuses the project audio clips `按钮.mp3` and `冒险音乐.mp3` by copying them into the sample folder, so imported samples keep valid references in other Unity projects.
-
+示例复用了项目音频 `按钮.mp3` 和 `冒险音乐.mp3`，并将它们复制到示例目录内，因此作为包示例导入到其他项目后引用也能保持有效。

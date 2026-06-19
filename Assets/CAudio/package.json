@@ -3,7 +3,7 @@
   "displayName": "CAudio",
   "version": "0.3.0",
   "unity": "2022.3",
-  "description": "A lightweight data-driven audio system for Unity with AudioDatabase, cue playback, mixer control, editor tooling, optional Addressables support, and EditMode tests.",
+  "description": "面向 Unity 的轻量数据驱动音频系统，提供 AudioDatabase、Cue 播放、Mixer 控制、编辑器工具、可选 Addressables 支持和 EditMode 测试。",
   "license": "MIT",
   "author": {
     "name": "Intro233"
@@ -21,9 +21,9 @@
   },
   "samples": [
     {
-      "displayName": "Feature Showcase",
-      "description": "A uGUI scene that demonstrates CAudio playback, selection modes, music, looping ambience, spatial playback, follow playback, stop controls, channel controls, cue limits, pool limits, and validation-friendly database setup.",
-      "path": "Samples~/Feature Showcase"
+      "displayName": "功能展示",
+      "description": "使用 uGUI 场景展示 CAudio 的播放、选择方式、音乐、循环环境音、空间播放、跟随播放、停止控制、通道控制、Cue 限制、音源池限制和示例数据库配置。",
+      "path": "Samples/Feature Showcase"
     }
   ]
 }

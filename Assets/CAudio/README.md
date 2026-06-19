@@ -54,6 +54,8 @@ Tests/EditMode/          EditMode 测试与 CAudio.EditModeTests.asmdef
 5. 在启动场景放一个空物体，挂载 `AudioSystemBootstrap`，把数据库拖到 `Database` 字段。
 6. 在代码里播放：
 
+需要快速建立通道总线时，可以在 `CAudio/Audio Database` 窗口的 `总线配置` 区域点击 `CAudio预设`。窗口会先弹出确认框，确认后自动创建预设 `AudioMixer`，并重建 Master、Music、Sfx、Voice、Ambience、Ui、Custom 总线。
+
 ```csharp
 using CAudio;
 using UnityEngine;
@@ -74,7 +76,7 @@ public sealed class AudioExample : MonoBehaviour
 
 ## 示例
 
-包内提供 `Feature Showcase` 示例。通过 Package Manager 导入包后，在 Samples 区域点击 `Feature Showcase` 的 `Import`，然后打开导入出的 `CAudioFeatureShowcase` 场景运行即可。
+包内提供 `功能展示` 示例。通过 Package Manager 导入包后，在 Samples 区域点击该示例的 `Import`，然后打开导入出的 `CAudioFeatureShowcase` 场景运行即可。
 
 ## 许可
 

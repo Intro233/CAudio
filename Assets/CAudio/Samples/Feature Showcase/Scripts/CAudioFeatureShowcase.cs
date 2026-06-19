@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace CAudio.Samples
 {
-    /// <summary>Feature showcase scene controller built with uGUI.</summary>
+    /// <summary>CAudio 功能展示场景控制器，使用 uGUI 构建运行时面板。</summary>
     public sealed class CAudioFeatureShowcase : MonoBehaviour
     {
         [SerializeField] private AudioDatabase database;
@@ -30,7 +30,7 @@ namespace CAudio.Samples
         {
             EnsureFollowTarget();
             BuildUi();
-            Log("CAudio Feature Showcase ready.");
+            Log("CAudio 功能展示已就绪。");
         }
 
         private void Update()
@@ -44,60 +44,60 @@ namespace CAudio.Samples
 
             if (statusText != null)
             {
-                statusText.text = $"Initialized: {AudioManager.IsInitialized}  |  Ambience: {DescribeHandle(ambienceHandle)}  |  Follow: {DescribeHandle(followHandle)}  |  Stress: {stressHandles.Count}";
+                statusText.text = $"已初始化：{AudioManager.IsInitialized}  |  环境音：{DescribeHandle(ambienceHandle)}  |  跟随音：{DescribeHandle(followHandle)}  |  压力句柄：{stressHandles.Count}";
             }
         }
 
         public void PlayUi()
         {
             AudioManager.PlayUi("ui_click");
-            Log("PlayUi(ui_click)");
+            Log("播放 UI 音效：ui_click");
         }
 
         public void PlaySfxRandom()
         {
             AudioManager.PlaySfx("sfx_random");
-            Log("PlaySfx(sfx_random) with weighted random volume/pitch.");
+            Log("播放 SFX：sfx_random，加权随机并带音量/音调浮动。");
         }
 
         public void PlaySfxSequential()
         {
             AudioManager.PlaySfx("sfx_sequence");
-            Log("PlaySfx(sfx_sequence) with sequential selection.");
+            Log("播放 SFX：sfx_sequence，顺序选择。");
         }
 
         public void TryLimitedCue()
         {
             AudioPlayResult result = AudioManager.TryPlay("sfx_limited");
-            Log(result.Success ? "TryPlay(sfx_limited) success." : $"TryPlay(sfx_limited) failed: {result.FailureReason}");
+            Log(result.Success ? "限制型 Cue 播放成功。" : $"限制型 Cue 播放失败：{result.FailureReason}");
         }
 
         public void TryMissingCue()
         {
             AudioPlayResult result = AudioManager.TryPlay("missing_key");
-            Log(result.Success ? "Unexpected missing cue success." : $"Missing cue result: {result.FailureReason}");
+            Log(result.Success ? "意外播放了不存在的 Cue。" : $"不存在 Cue 的失败结果：{result.FailureReason}");
         }
 
         public void PlayAsyncCue()
         {
             AudioManager.PlayAsync("sfx_random", null, result =>
             {
-                Log(result.Success ? "PlayAsync(sfx_random) completed." : $"PlayAsync failed: {result.FailureReason}");
+                Log(result.Success ? "异步播放完成：sfx_random。" : $"异步播放失败：{result.FailureReason}");
             });
-            Log("PlayAsync(sfx_random) requested.");
+            Log("已发起异步播放：sfx_random。");
         }
 
         public void PlayDirectClip()
         {
             AudioManager.Play(directClip, new AudioPlayOptions { Channel = AudioChannel.Sfx, Volume = 0.9f });
-            Log("Play(directClip)");
+            Log("播放直连 AudioClip。");
         }
 
         public void PlayAtPosition()
         {
             Vector3 position = transform.position + new Vector3(UnityEngine.Random.Range(-3f, 3f), 1f, UnityEngine.Random.Range(-2f, 2f));
             AudioManager.PlayAt("sfx_3d", position);
-            Log($"PlayAt(sfx_3d, {position:F1})");
+            Log($"在世界坐标播放 3D 音效：{position:F1}");
         }
 
         public void PlayFollowTarget()
@@ -108,13 +108,13 @@ namespace CAudio.Samples
                 FadeIn = 0.15f,
                 FadeOut = 0.3f
             });
-            Log("PlayFollow(sfx_3d) loop started.");
+            Log("开始跟随目标循环播放 3D 音效。");
         }
 
         public void StopFollowTarget()
         {
             followHandle?.Stop(0.3f);
-            Log("Follow handle fade-out stop.");
+            Log("跟随音效淡出停止。");
         }
 
         public void ToggleAmbience()
@@ -122,37 +122,37 @@ namespace CAudio.Samples
             if (ambienceHandle != null && !ambienceHandle.IsStopped)
             {
                 ambienceHandle.Stop(0.75f);
-                Log("Ambience loop fade-out stop.");
+                Log("环境循环淡出停止。");
                 return;
             }
 
             ambienceHandle = AudioManager.PlayAmbience("ambience_loop");
-            Log("Ambience loop fade-in start.");
+            Log("环境循环淡入开始。");
         }
 
         public void PlayMusic()
         {
             AudioManager.PlayMusic("music_theme");
-            Log("PlayMusic(music_theme)");
+            Log("播放音乐：music_theme。");
         }
 
         public void CrossfadeMusic()
         {
             AudioManager.CrossfadeMusic("music_alt", 1f);
-            Log("CrossfadeMusic(music_alt, 1s)");
+            Log("音乐交叉淡入淡出到：music_alt，1 秒。");
         }
 
         public void QueueMusic()
         {
             AudioManager.QueueMusic("music_theme", 0.5f);
             AudioManager.QueueMusic("music_alt", 0.5f);
-            Log("Queued music_theme then music_alt.");
+            Log("已排队播放 music_theme，然后 music_alt。");
         }
 
         public void PlayVoice()
         {
             AudioManager.PlayVoice("voice_line");
-            Log("PlayVoice(voice_line), voice ducking enabled in database.");
+            Log("播放语音：voice_line，数据库已启用语音压低音乐。");
         }
 
         public void StartPoolStress()
@@ -167,11 +167,11 @@ namespace CAudio.Samples
                 }
                 else
                 {
-                    Log($"Pool stress item {i + 1} failed: {result.FailureReason}");
+                    Log($"音源池压力项 {i + 1} 播放失败：{result.FailureReason}");
                 }
             }
 
-            Log($"Pool stress requested 10 loops, active handles: {stressHandles.Count}.");
+            Log($"已请求 10 个循环音源，成功句柄数：{stressHandles.Count}。");
         }
 
         public void ClearStressHandles()
@@ -182,62 +182,62 @@ namespace CAudio.Samples
             }
 
             stressHandles.Clear();
-            Log("Stopped stress handles.");
+            Log("已停止压力测试句柄。");
         }
 
         public void PauseAll()
         {
             AudioManager.PauseAll();
-            Log("PauseAll()");
+            Log("暂停全部音频。");
         }
 
         public void ResumeAll()
         {
             AudioManager.ResumeAll();
-            Log("ResumeAll()");
+            Log("恢复全部音频。");
         }
 
         public void StopAll()
         {
             AudioManager.StopAll(0.4f);
             ClearStressHandles();
-            Log("StopAll(0.4s)");
+            Log("停止全部音频，淡出 0.4 秒。");
         }
 
         public void StopGroupCombat()
         {
             AudioManager.StopGroup("combat", 0.2f);
-            Log("StopGroup(combat)");
+            Log("停止 combat 分组。");
         }
 
         public void StopKeyPrefix()
         {
             AudioManager.StopByKeyPrefix("sfx_", 0.2f);
-            Log("StopByKeyPrefix(sfx_)");
+            Log("停止 Key 前缀为 sfx_ 的音频。");
         }
 
         public void StopSfxChannel()
         {
             AudioManager.StopChannel(AudioChannel.Sfx, 0.2f);
-            Log("StopChannel(Sfx)");
+            Log("停止 Sfx 通道。");
         }
 
         public void SoloMusic()
         {
             AudioManager.SetSoloChannel(AudioChannel.Music);
-            Log("Solo Music channel.");
+            Log("独奏 Music 通道。");
         }
 
         public void ClearSolo()
         {
             AudioManager.ClearSoloChannel();
-            Log("Clear solo channel.");
+            Log("清除通道独奏。");
         }
 
         public void MuteSfx(bool mute)
         {
             AudioManager.SetChannelMute(AudioChannel.Sfx, mute);
-            Log(mute ? "Sfx muted." : "Sfx unmuted.");
+            Log(mute ? "Sfx 已静音。" : "Sfx 已取消静音。");
         }
 
         public void SetMasterVolume(float value)
@@ -316,54 +316,54 @@ namespace CAudio.Samples
             rootLayout.childForceExpandHeight = false;
             rootLayout.childForceExpandWidth = true;
 
-            Text title = CreateText("Title", panelObject.transform, "CAudio Feature Showcase", 28, FontStyle.Bold, TextAnchor.MiddleLeft);
+            Text title = CreateText("Title", panelObject.transform, "CAudio 功能展示", 28, FontStyle.Bold, TextAnchor.MiddleLeft);
             title.color = Color.white;
 
             statusText = CreateText("Status", panelObject.transform, string.Empty, 14, FontStyle.Normal, TextAnchor.MiddleLeft);
             statusText.color = new Color(0.75f, 0.82f, 0.9f, 1f);
 
-            CreateButtonGrid(panelObject.transform, "Playback", new[]
+            CreateButtonGrid(panelObject.transform, "播放能力", new[]
             {
-                ButtonSpec("UI Click", PlayUi),
-                ButtonSpec("SFX Random", PlaySfxRandom),
-                ButtonSpec("SFX Sequential", PlaySfxSequential),
-                ButtonSpec("Cooldown/Limit", TryLimitedCue),
-                ButtonSpec("Missing Cue", TryMissingCue),
-                ButtonSpec("Async Play", PlayAsyncCue),
-                ButtonSpec("Direct Clip", PlayDirectClip),
-                ButtonSpec("Voice Ducking", PlayVoice)
+                ButtonSpec("UI 点击", PlayUi),
+                ButtonSpec("随机音效", PlaySfxRandom),
+                ButtonSpec("顺序音效", PlaySfxSequential),
+                ButtonSpec("冷却/上限", TryLimitedCue),
+                ButtonSpec("缺失 Cue", TryMissingCue),
+                ButtonSpec("异步播放", PlayAsyncCue),
+                ButtonSpec("直连 Clip", PlayDirectClip),
+                ButtonSpec("语音压低", PlayVoice)
             });
 
-            CreateButtonGrid(panelObject.transform, "Music And Loops", new[]
+            CreateButtonGrid(panelObject.transform, "音乐与循环", new[]
             {
-                ButtonSpec("Music", PlayMusic),
-                ButtonSpec("Crossfade", CrossfadeMusic),
-                ButtonSpec("Queue Music", QueueMusic),
-                ButtonSpec("Ambience Toggle", ToggleAmbience),
-                ButtonSpec("3D At Position", PlayAtPosition),
-                ButtonSpec("Follow Loop", PlayFollowTarget),
-                ButtonSpec("Stop Follow", StopFollowTarget),
-                ButtonSpec("Pool Stress", StartPoolStress)
+                ButtonSpec("播放音乐", PlayMusic),
+                ButtonSpec("交叉淡入淡出", CrossfadeMusic),
+                ButtonSpec("音乐队列", QueueMusic),
+                ButtonSpec("环境音开关", ToggleAmbience),
+                ButtonSpec("3D 坐标播放", PlayAtPosition),
+                ButtonSpec("跟随循环", PlayFollowTarget),
+                ButtonSpec("停止跟随", StopFollowTarget),
+                ButtonSpec("音源池压力", StartPoolStress)
             });
 
-            CreateButtonGrid(panelObject.transform, "Control", new[]
+            CreateButtonGrid(panelObject.transform, "控制能力", new[]
             {
-                ButtonSpec("Pause All", PauseAll),
-                ButtonSpec("Resume All", ResumeAll),
-                ButtonSpec("Stop All", StopAll),
-                ButtonSpec("Stop Combat Group", StopGroupCombat),
-                ButtonSpec("Stop sfx_*", StopKeyPrefix),
-                ButtonSpec("Stop Sfx Channel", StopSfxChannel),
-                ButtonSpec("Solo Music", SoloMusic),
-                ButtonSpec("Clear Solo", ClearSolo)
+                ButtonSpec("暂停全部", PauseAll),
+                ButtonSpec("恢复全部", ResumeAll),
+                ButtonSpec("停止全部", StopAll),
+                ButtonSpec("停止 combat", StopGroupCombat),
+                ButtonSpec("停止 sfx_*", StopKeyPrefix),
+                ButtonSpec("停止 Sfx 通道", StopSfxChannel),
+                ButtonSpec("独奏 Music", SoloMusic),
+                ButtonSpec("清除独奏", ClearSolo)
             });
 
-            CreateSliderRow(panelObject.transform, "Master", SetMasterVolume, 1f);
-            CreateSliderRow(panelObject.transform, "Music", SetMusicVolume, 0.8f);
-            CreateSliderRow(panelObject.transform, "Sfx", SetSfxVolume, 1f);
-            CreateToggle(panelObject.transform, "Mute Sfx", MuteSfx);
+            CreateSliderRow(panelObject.transform, "主音量", SetMasterVolume, 1f);
+            CreateSliderRow(panelObject.transform, "音乐音量", SetMusicVolume, 0.8f);
+            CreateSliderRow(panelObject.transform, "音效音量", SetSfxVolume, 1f);
+            CreateToggle(panelObject.transform, "静音 Sfx", MuteSfx);
 
-            logText = CreateText("Log", panelObject.transform, "Log:", 14, FontStyle.Normal, TextAnchor.UpperLeft);
+            logText = CreateText("Log", panelObject.transform, "日志：", 14, FontStyle.Normal, TextAnchor.UpperLeft);
             logText.color = new Color(0.86f, 0.88f, 0.9f, 1f);
             LayoutElement logLayout = logText.gameObject.AddComponent<LayoutElement>();
             logLayout.minHeight = 120f;
@@ -556,15 +556,15 @@ namespace CAudio.Samples
         {
             if (handle == null)
             {
-                return "None";
+                return "无";
             }
 
             if (handle.IsStopped)
             {
-                return "Stopped";
+                return "已停止";
             }
 
-            return handle.Paused ? "Paused" : "Playing";
+            return handle.Paused ? "已暂停" : "播放中";
         }
 
         private void Log(string message)
