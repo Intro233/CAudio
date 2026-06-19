@@ -12,15 +12,72 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 187f077ef08d3994eb24a8382f15e0b5, type: 3}
   m_Name: AudioDatabase
   m_EditorClassIdentifier: 
-  cues: []
+  cues:
+  - key: ui_click
+    displayName: "\u6309\u94AE"
+    group: 
+    channel: 5
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 1, y: 1}
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0
+    fadeOutTime: 0.1
+    cooldown: 0
+    maxSimultaneous: 1
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 128
+    outputGroup: {fileID: 0}
+  - key: music_theme
+    displayName: "\u5192\u9669\u97F3\u4E50"
+    group: 
+    channel: 1
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 1, y: 1}
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    replaceSameChannel: 1
+    fadeInTime: 0
+    fadeOutTime: 0.1
+    cooldown: 0
+    maxSimultaneous: 0
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 128
+    outputGroup: {fileID: 0}
   cueAssets: []
-  buses: []
+  buses:
+  - channel: 5
+    outputGroup: {fileID: -6875923307879279450, guid: 941d73be560792c469284e38344cf26b, type: 2}
+    volume: 0.3
+    mute: 0
+  - channel: 1
+    outputGroup: {fileID: 7783974692672988410, guid: 941d73be560792c469284e38344cf26b, type: 2}
+    volume: 0.84
+    mute: 0
   debugSettings:
     logLevel: 2
     logSuccessfulPlay: 0
   mixerSettings:
-    mixer: {fileID: 0}
+    mixer: {fileID: 24100000, guid: 941d73be560792c469284e38344cf26b, type: 2}
     volumeParameters: []
     enableVoiceDucking: 1
     duckMusicVolume: 0.35
     duckFadeSpeed: 8
+  poolSettings:
+    prewarmCount: 8
+    maxSourceCount: 64

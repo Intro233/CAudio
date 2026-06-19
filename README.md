@@ -212,6 +212,7 @@ if (!result.Success)
 - `Cancelled`
 - `Cooldown`
 - `MaxSimultaneous`
+- `PoolLimitReached`
 
 ### 播放句柄
 
@@ -350,7 +351,41 @@ AudioManager.Initialize(database);
 AudioManager.PlayAsync("sfx_addressable");
 ```
 
-当前示例 Provider 不做缓存和释放策略；正式项目可在自定义 Provider 中加入引用计数、缓存、预加载或释放逻辑。
+当前 Addressables 示例 Provider 会在播放生命周期结束时释放加载句柄；正式项目可在自定义 Provider 中进一步加入共享缓存、预加载或更细的引用计数策略。
+
+如资源系统需要释放加载结果，可额外实现 `IAudioClipReleaseProvider`：
+
+```csharp
+public sealed class MyAddressProvider : IAudioClipProvider, IAudioClipReleaseProvider
+{
+    public bool TryResolveClip(AudioClipReference reference, out AudioClip clip)
+    {
+        clip = null;
+        return false;
+    }
+
+    public void LoadClipAsync(AudioClipReference reference, Action<AudioClip> onSuccess, Action<string> onFailure)
+    {
+        // 加载并在成功时回调 onSuccess。
+    }
+
+    public void ReleaseClip(AudioClipReference reference, AudioClip clip)
+    {
+        // 释放对应资源句柄或减少引用计数。
+    }
+}
+```
+
+CAudio 会在播放结束、加载后取消、加载后被冷却/并发限制拒绝等路径调用释放接口。
+
+## 音源池
+
+`AudioDatabase` 包含 `AudioPoolSettings`：
+
+- `PrewarmCount`：初始化时预热的 `AudioSource` 数量。
+- `MaxSourceCount`：最大 `AudioSource` 数量，`0` 表示不限制。
+
+当池已满时，播放会返回 `AudioPlayFailureReason.PoolLimitReached`，并记录警告日志。这样高频音效不会无限创建隐藏的 `AudioSource`。
 
 ## 编辑器工作流
 

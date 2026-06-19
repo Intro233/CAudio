@@ -10,6 +10,12 @@
 - Added cue cooldown, max simultaneous playback, group, sequential selection, shuffle selection, and no-immediate-repeat selection.
 - Improved the audio database editor window with filtering, issue filtering, duplication, delete confirmation, selected-clip import, and a custom `AudioCueData` drawer.
 - Expanded README and quick start documentation.
+- Fixed paused non-looping audio being treated as finished.
+- Fixed music queues so failed entries are skipped and later entries can continue.
+- Fixed fade-out volume so channel/master volume is not applied twice.
+- Added audio source pool limits and `PoolLimitReached` playback failure results.
+- Added optional clip release lifecycle support for Addressables and custom providers.
+- Improved validation issue metadata and editor-side issue locating.
 
 ## 0.2.0
 

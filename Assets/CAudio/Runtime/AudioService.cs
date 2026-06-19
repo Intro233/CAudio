@@ -47,13 +47,14 @@ namespace CAudio
             this.database = database;
             this.clipProvider = clipProvider ?? new DirectAudioClipProvider();
             sourcePool = new AudioSourcePool(root);
-            sourcePool.Prewarm(8);
+            ApplyPoolSettings();
         }
 
         /// <summary>设置数据库。</summary>
         public void SetDatabase(AudioDatabase value)
         {
             database = value;
+            ApplyPoolSettings();
             ApplyMixerVolumes();
         }
 
@@ -167,7 +168,12 @@ namespace CAudio
             }
 
             AudioPlayOptions resolved = AudioPlayOptions.CopyOrDefault(options);
-            AudioPlaybackHandle handle = CreatePlayback(clip, null, resolved, resolved.Channel ?? AudioChannel.Sfx, resolved.OutputGroup);
+            AudioPlaybackHandle handle = CreatePlayback(clip, null, null, clipProvider as IAudioClipReleaseProvider, resolved, resolved.Channel ?? AudioChannel.Sfx, resolved.OutputGroup);
+            if (handle == null)
+            {
+                return Fail(AudioPlayFailureReason.PoolLimitReached, "音源池已达到最大数量。");
+            }
+
             return Succeed(handle, $"播放直连音频：{clip.name}。");
         }
 
@@ -205,7 +211,13 @@ namespace CAudio
             AudioPlayOptions resolved = MergeOptions(cue, options);
             float clipVolume = cue.GetVolumeMultiplier();
             float clipPitch = cue.GetPitchMultiplier();
-            AudioPlaybackHandle handle = CreatePlayback(clip, cue, resolved, resolved.Channel ?? cue.Channel, resolved.OutputGroup, clipVolume, clipPitch);
+            AudioPlaybackHandle handle = CreatePlayback(clip, cue, reference, clipProvider as IAudioClipReleaseProvider, resolved, resolved.Channel ?? cue.Channel, resolved.OutputGroup, clipVolume, clipPitch);
+            if (handle == null)
+            {
+                ReleaseClip(clipProvider as IAudioClipReleaseProvider, reference, clip);
+                return Fail(AudioPlayFailureReason.PoolLimitReached, $"音频配置 {cue.Key} 无法播放，音源池已达到最大数量。");
+            }
+
             return Succeed(handle, $"播放音频：{cue.Key}。");
         }
 
@@ -472,6 +484,7 @@ namespace CAudio
                 if (handle.Tick(deltaTime, masterPlaybackVolume, channelVolume))
                 {
                     bool wasMusic = handle.Channel == AudioChannel.Music;
+                    ReleaseHandleClip(handle);
                     sourcePool.Release(handle.Source);
                     handles.RemoveAt(i);
                     if (wasMusic)
@@ -485,6 +498,12 @@ namespace CAudio
         /// <summary>创建播放句柄。</summary>
         private AudioPlaybackHandle CreatePlayback(AudioClip clip, AudioCueData cue, AudioPlayOptions options, AudioChannel channel, AudioMixerGroup outputGroup, float clipVolume = 1f, float clipPitch = 1f)
         {
+            return CreatePlayback(clip, cue, null, clipProvider as IAudioClipReleaseProvider, options, channel, outputGroup, clipVolume, clipPitch);
+        }
+
+        /// <summary>创建播放句柄。</summary>
+        private AudioPlaybackHandle CreatePlayback(AudioClip clip, AudioCueData cue, AudioClipReference clipReference, IAudioClipReleaseProvider releaseProvider, AudioPlayOptions options, AudioChannel channel, AudioMixerGroup outputGroup, float clipVolume = 1f, float clipPitch = 1f)
+        {
             if (clip == null)
             {
                 return null;
@@ -496,6 +515,11 @@ namespace CAudio
             }
 
             AudioSource source = sourcePool.Rent();
+            if (source == null)
+            {
+                return null;
+            }
+
             source.clip = clip;
             source.loop = options.Loop ?? (cue != null && cue.Loop);
             source.priority = options.Priority ?? (cue != null ? cue.Priority : 128);
@@ -515,6 +539,8 @@ namespace CAudio
                 Key = cue != null ? cue.Key : null,
                 Group = cue != null ? cue.Group : null,
                 Clip = clip,
+                ClipReference = clipReference,
+                ReleaseProvider = releaseProvider,
                 FollowTarget = options.FollowTarget,
                 WorldPosition = options.Position ?? Vector3.zero,
                 UseWorldPosition = options.Position.HasValue,
@@ -567,20 +593,21 @@ namespace CAudio
                 return;
             }
 
-            QueuedMusic queued = musicQueue.Dequeue();
-            AudioPlayOptions options = AudioPlayOptions.CopyOrDefault(queued.Options);
-            options.Channel = AudioChannel.Music;
-            options.ReplaceSameChannel = true;
-            options.FadeIn = queued.FadeSeconds;
-            options.FadeOut = queued.FadeSeconds;
-
-            if (queued.Clip != null)
+            while (musicQueue.Count > 0 && !HasActiveMusic())
             {
-                Play(queued.Clip, options);
-                return;
-            }
+                QueuedMusic queued = musicQueue.Dequeue();
+                AudioPlayOptions options = AudioPlayOptions.CopyOrDefault(queued.Options);
+                options.Channel = AudioChannel.Music;
+                options.ReplaceSameChannel = true;
+                options.FadeIn = queued.FadeSeconds;
+                options.FadeOut = queued.FadeSeconds;
 
-            Play(queued.Key, options);
+                AudioPlayResult result = queued.Clip != null ? TryPlay(queued.Clip, options) : TryPlay(queued.Key, options);
+                if (result.Success)
+                {
+                    return;
+                }
+            }
         }
 
         /// <summary>判断是否存在活动音乐。</summary>
@@ -629,12 +656,15 @@ namespace CAudio
             AudioPlayOptions resolved = MergeOptions(cue, options);
             float clipVolume = cue.GetVolumeMultiplier();
             float clipPitch = cue.GetPitchMultiplier();
-            clipProvider.LoadClipAsync(
+            IAudioClipProvider provider = clipProvider ?? new DirectAudioClipProvider();
+            IAudioClipReleaseProvider releaseProvider = provider as IAudioClipReleaseProvider;
+            provider.LoadClipAsync(
                 reference,
                 clip =>
                 {
                     if (request.IsDone)
                     {
+                        ReleaseClip(releaseProvider, reference, clip);
                         return;
                     }
 
@@ -646,11 +676,19 @@ namespace CAudio
 
                     if (TryCreatePlaybackGateFailure(cue, out AudioPlayResult lateGateFailure))
                     {
+                        ReleaseClip(releaseProvider, reference, clip);
                         request.Complete(lateGateFailure);
                         return;
                     }
 
-                    AudioPlaybackHandle handle = CreatePlayback(clip, cue, resolved, resolved.Channel ?? cue.Channel, resolved.OutputGroup, clipVolume, clipPitch);
+                    AudioPlaybackHandle handle = CreatePlayback(clip, cue, reference, releaseProvider, resolved, resolved.Channel ?? cue.Channel, resolved.OutputGroup, clipVolume, clipPitch);
+                    if (handle == null)
+                    {
+                        ReleaseClip(releaseProvider, reference, clip);
+                        request.Complete(Fail(AudioPlayFailureReason.PoolLimitReached, $"音频配置 {cue.Key} 无法播放，音源池已达到最大数量。"));
+                        return;
+                    }
+
                     request.Complete(Succeed(handle, $"异步播放音频：{cue.Key}。"));
                 },
                 error =>
@@ -820,6 +858,40 @@ namespace CAudio
             }
 
             return new AudioPlayResult(handle, AudioPlayFailureReason.None, message);
+        }
+
+        /// <summary>应用数据库中的音源池配置。</summary>
+        private void ApplyPoolSettings()
+        {
+            AudioPoolSettings settings = database != null ? database.PoolSettings : null;
+            int prewarmCount = settings != null ? settings.PrewarmCount : 8;
+            int maxSourceCount = settings != null ? settings.MaxSourceCount : 64;
+            sourcePool.Configure(maxSourceCount);
+            sourcePool.Prewarm(prewarmCount);
+        }
+
+        /// <summary>释放播放句柄关联的资源剪辑。</summary>
+        private void ReleaseHandleClip(AudioPlaybackHandle handle)
+        {
+            if (handle == null)
+            {
+                return;
+            }
+
+            ReleaseClip(handle.ReleaseProvider, handle.ClipReference, handle.Clip);
+            handle.ReleaseProvider = null;
+            handle.ClipReference = null;
+        }
+
+        /// <summary>释放由资源系统提供的音频剪辑。</summary>
+        private void ReleaseClip(IAudioClipReleaseProvider releaseProvider, AudioClipReference reference, AudioClip clip)
+        {
+            if (releaseProvider == null || clip == null)
+            {
+                return;
+            }
+
+            releaseProvider.ReleaseClip(reference, clip);
         }
 
         /// <summary>输出日志。</summary>

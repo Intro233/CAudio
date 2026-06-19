@@ -70,8 +70,8 @@ git diff --check
 ## Latest Verification
 
 - `git diff --check` passes.
-- A temporary project copy at `C:\Users\Nagisa\AppData\Local\Temp\CAudio_TestRun_20260619_022947` compiled Runtime, Editor, Samples, and EditMode Tests assemblies successfully.
-- EditMode tests passed in the temporary project copy after removing `-quit`: `TestResults_NoQuit_EditMode.xml` reports 23 total, 23 passed, 0 failed, 0 skipped.
+- A temporary project copy at `C:\Users\Nagisa\AppData\Local\Temp\CAudio_FourBatchTest_20260619_081744` compiled Runtime, Editor, Samples, and EditMode Tests assemblies successfully.
+- EditMode tests passed in the temporary project copy after removing `-quit`: `TestResults_EditMode.xml` reports 28 total, 28 passed, 0 failed, 0 skipped.
 
 ## Current Known Blocker
 

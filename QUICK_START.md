@@ -203,5 +203,6 @@ Cue 的 Clip 选择方式支持：
 
 ```csharp
 AudioManager.SetClipProvider(new AddressablesAudioClipProvider());
+AudioManager.Initialize(database);
 AudioManager.PlayAsync("addressable_voice");
 ```

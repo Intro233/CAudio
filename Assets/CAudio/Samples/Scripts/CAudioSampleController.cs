@@ -29,12 +29,14 @@ namespace CAudio.Samples
         }
 
         /// <summary>播放 UI 音效。</summary>
+        [ContextMenu("PlayUi")]
         public void PlayUi()
         {
             AudioManager.PlayUi(uiKey);
         }
 
         /// <summary>播放音乐。</summary>
+        [ContextMenu("PlayMusic")]
         public void PlayMusic()
         {
             AudioManager.CrossfadeMusic(musicKey, 1f);
@@ -81,7 +83,6 @@ namespace CAudio.Samples
         /// <summary>停止示例循环音频。</summary>
         public void StopLoop()
         {
-            
             loopingHandle?.Stop();
         }
     }

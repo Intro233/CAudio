@@ -49,7 +49,8 @@ namespace CAudio
         ProviderFailed,
         Cancelled,
         Cooldown,
-        MaxSimultaneous
+        MaxSimultaneous,
+        PoolLimitReached
     }
 
     /// <summary>音频播放结果。</summary>
@@ -76,13 +77,37 @@ namespace CAudio
     {
         public readonly AudioLogLevel Level;
         public readonly string Message;
+        public readonly string CueKey;
+        public readonly UnityEngine.Object Context;
 
         /// <summary>创建校验结果。</summary>
         public AudioDatabaseValidationIssue(AudioLogLevel level, string message)
+            : this(level, message, null, null)
+        {
+        }
+
+        /// <summary>创建带定位信息的校验结果。</summary>
+        public AudioDatabaseValidationIssue(AudioLogLevel level, string message, string cueKey, UnityEngine.Object context)
         {
             Level = level;
             Message = message;
+            CueKey = cueKey;
+            Context = context;
         }
+    }
+
+    /// <summary>音源池配置。</summary>
+    [Serializable]
+    public sealed class AudioPoolSettings
+    {
+        [SerializeField] private int prewarmCount = 8;
+        [SerializeField] private int maxSourceCount = 64;
+
+        /// <summary>获取预热音源数量。</summary>
+        public int PrewarmCount => Mathf.Max(0, prewarmCount);
+
+        /// <summary>获取最大音源数量，0 表示不限制。</summary>
+        public int MaxSourceCount => Mathf.Max(0, maxSourceCount);
     }
 
     /// <summary>音频剪辑引用，当前优先使用直连剪辑，后续可平滑切到地址化资源。</summary>

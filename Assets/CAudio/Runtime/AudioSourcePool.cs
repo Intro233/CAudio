@@ -9,6 +9,7 @@ namespace CAudio
         private readonly Transform root;
         private readonly Stack<AudioSource> cache = new Stack<AudioSource>();
         private readonly List<AudioSource> allSources = new List<AudioSource>();
+        private int maxSourceCount = 64;
 
         /// <summary>创建对象池。</summary>
         public AudioSourcePool(Transform root)
@@ -19,11 +20,18 @@ namespace CAudio
         /// <summary>预热音源池。</summary>
         public void Prewarm(int count)
         {
-            for (int i = 0; i < count; i++)
+            int targetCount = Mathf.Max(0, count);
+            while (allSources.Count < targetCount && CanCreateSource())
             {
                 AudioSource source = CreateSource();
                 Release(source);
             }
+        }
+
+        /// <summary>配置音源池容量，maxSourceCount 为 0 时表示不限制。</summary>
+        public void Configure(int maxSourceCount)
+        {
+            this.maxSourceCount = Mathf.Max(0, maxSourceCount);
         }
 
         /// <summary>获取一个音源。</summary>
@@ -40,7 +48,7 @@ namespace CAudio
                 }
             }
 
-            return CreateSource();
+            return CanCreateSource() ? CreateSource() : null;
         }
 
         /// <summary>归还一个音源。</summary>
@@ -85,6 +93,12 @@ namespace CAudio
             source.loop = false;
             allSources.Add(source);
             return source;
+        }
+
+        /// <summary>读取是否还可以创建新音源。</summary>
+        private bool CanCreateSource()
+        {
+            return maxSourceCount == 0 || allSources.Count < maxSourceCount;
         }
 
         /// <summary>重置音源，避免复用时继承上一次播放状态。</summary>

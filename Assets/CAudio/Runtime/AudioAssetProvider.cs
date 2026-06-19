@@ -13,8 +13,15 @@ namespace CAudio
         void LoadClipAsync(AudioClipReference reference, Action<AudioClip> onSuccess, Action<string> onFailure);
     }
 
+    /// <summary>可选的音频资源释放接口，适用于 Addressables 或自定义资源系统。</summary>
+    public interface IAudioClipReleaseProvider
+    {
+        /// <summary>释放先前解析出的音频剪辑。</summary>
+        void ReleaseClip(AudioClipReference reference, AudioClip clip);
+    }
+
     /// <summary>直连资源解析器。</summary>
-    public sealed class DirectAudioClipProvider : IAudioClipProvider
+    public sealed class DirectAudioClipProvider : IAudioClipProvider, IAudioClipReleaseProvider
     {
         /// <summary>同步尝试解析音频剪辑。</summary>
         public bool TryResolveClip(AudioClipReference reference, out AudioClip clip)
@@ -33,6 +40,11 @@ namespace CAudio
             }
 
             onFailure?.Invoke("未找到可用的直连音频剪辑。");
+        }
+
+        /// <summary>直连剪辑由 Unity 资产系统管理，无需释放。</summary>
+        public void ReleaseClip(AudioClipReference reference, AudioClip clip)
+        {
         }
     }
 }

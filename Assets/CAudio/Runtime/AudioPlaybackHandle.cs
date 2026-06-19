@@ -12,6 +12,8 @@ namespace CAudio
         internal string Key;
         internal string Group;
         internal AudioClip Clip;
+        internal AudioClipReference ClipReference;
+        internal IAudioClipReleaseProvider ReleaseProvider;
         internal Transform FollowTarget;
         internal Vector3 WorldPosition;
         internal bool UseWorldPosition;
@@ -30,6 +32,7 @@ namespace CAudio
         internal float StartVolume;
         internal float StopStartVolume;
         internal bool StopRequested;
+        internal bool IsPaused;
         internal float StopFadeOutTime;
         internal float StopFadeOutDuration;
         internal bool HasStopped;
@@ -39,6 +42,12 @@ namespace CAudio
 
         /// <summary>获取是否已停止并等待回收。</summary>
         public bool IsStopped => HasStopped;
+
+        /// <summary>获取是否已暂停。</summary>
+        public bool Paused => IsPaused;
+
+        /// <summary>获取当前 AudioSource 音量，主要用于调试和验证。</summary>
+        public float CurrentVolume => Source != null ? Source.volume : 0f;
 
         /// <summary>获取播放Key。</summary>
         public string PlaybackKey => Key;
@@ -71,6 +80,7 @@ namespace CAudio
                 return;
             }
 
+            IsPaused = true;
             Source.Pause();
         }
 
@@ -82,6 +92,7 @@ namespace CAudio
                 return;
             }
 
+            IsPaused = false;
             Source.UnPause();
         }
 
@@ -121,13 +132,18 @@ namespace CAudio
             {
                 StopFadeOutTime -= deltaTime;
                 float t = StopFadeOutDuration > 0f ? Mathf.Clamp01(StopFadeOutTime / StopFadeOutDuration) : 0f;
-                Source.volume = StopStartVolume * t * masterVolume * channelVolume;
+                Source.volume = StopStartVolume * t;
                 if (StopFadeOutTime <= 0f)
                 {
                     Finish();
                     return true;
                 }
 
+                return false;
+            }
+
+            if (IsPaused)
+            {
                 return false;
             }
 

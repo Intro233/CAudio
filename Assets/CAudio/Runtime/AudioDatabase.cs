@@ -13,6 +13,7 @@ namespace CAudio
         [SerializeField] private List<AudioBusData> buses = new List<AudioBusData>();
         [SerializeField] private AudioDebugSettings debugSettings = new AudioDebugSettings();
         [SerializeField] private AudioMixerControlSettings mixerSettings = new AudioMixerControlSettings();
+        [SerializeField] private AudioPoolSettings poolSettings = new AudioPoolSettings();
 
         [NonSerialized] private Dictionary<string, AudioCueData> cueLookup;
         [NonSerialized] private Dictionary<AudioChannel, AudioBusData> busLookup;
@@ -28,6 +29,9 @@ namespace CAudio
 
         /// <summary>获取混音器配置。</summary>
         public AudioMixerControlSettings MixerSettings => mixerSettings;
+
+        /// <summary>获取音源池配置。</summary>
+        public AudioPoolSettings PoolSettings => poolSettings;
 
         /// <summary>添加内嵌音频配置。</summary>
         public void AddCue(AudioCueData cue)
@@ -103,18 +107,18 @@ namespace CAudio
             List<AudioDatabaseValidationIssue> issues = new List<AudioDatabaseValidationIssue>();
             HashSet<string> keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            ValidateCueList(cues, keys, issues, "内嵌条目");
+            ValidateCueList(cues, keys, issues, "内嵌条目", this);
 
             for (int i = 0; i < cueAssets.Count; i++)
             {
                 AudioCueAsset asset = cueAssets[i];
                 if (asset == null)
                 {
-                    issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"独立Cue资产第 {i} 项为空。"));
+                    issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"独立Cue资产第 {i} 项为空。", null, this));
                     continue;
                 }
 
-                ValidateCue(asset.Data, keys, issues, asset.name);
+                ValidateCue(asset.Data, keys, issues, asset.name, asset);
             }
 
             for (int i = 0; i < buses.Count; i++)
@@ -122,7 +126,7 @@ namespace CAudio
                 AudioBusData bus = buses[i];
                 if (bus == null)
                 {
-                    issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"总线第 {i} 项为空。"));
+                    issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"总线第 {i} 项为空。", null, this));
                     continue;
                 }
 
@@ -131,7 +135,7 @@ namespace CAudio
                     AudioBusData other = buses[j];
                     if (other != null && other.Channel == bus.Channel)
                     {
-                        issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"总线 {bus.Channel} 存在重复配置。"));
+                        issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"总线 {bus.Channel} 存在重复配置。", null, this));
                         break;
                     }
                 }
@@ -188,41 +192,41 @@ namespace CAudio
         }
 
         /// <summary>校验配置列表。</summary>
-        private void ValidateCueList(List<AudioCueData> cueList, HashSet<string> keys, List<AudioDatabaseValidationIssue> issues, string label)
+        private void ValidateCueList(List<AudioCueData> cueList, HashSet<string> keys, List<AudioDatabaseValidationIssue> issues, string label, UnityEngine.Object context)
         {
             for (int i = 0; i < cueList.Count; i++)
             {
-                ValidateCue(cueList[i], keys, issues, $"{label}第 {i} 项");
+                ValidateCue(cueList[i], keys, issues, $"{label}第 {i} 项", context);
             }
         }
 
         /// <summary>校验单条配置。</summary>
-        private void ValidateCue(AudioCueData cue, HashSet<string> keys, List<AudioDatabaseValidationIssue> issues, string label)
+        private void ValidateCue(AudioCueData cue, HashSet<string> keys, List<AudioDatabaseValidationIssue> issues, string label, UnityEngine.Object context)
         {
             if (cue == null)
             {
-                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{label}为空。"));
+                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{label}为空。", null, context));
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(cue.Key))
             {
-                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{label}缺少Key。"));
+                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{label}缺少Key。", null, context));
                 return;
             }
 
             if (!keys.Add(cue.Key))
             {
-                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"Key重复：{cue.Key}。"));
+                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"Key重复：{cue.Key}。", cue.Key, context));
             }
 
             if (!cue.HasClips())
             {
-                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{cue.Key} 没有配置Clip。"));
+                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{cue.Key} 没有配置Clip。", cue.Key, context));
             }
             else if (!cue.HasResolvableClipReference())
             {
-                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{cue.Key} 没有可解析的Clip引用。"));
+                issues.Add(new AudioDatabaseValidationIssue(AudioLogLevel.Warning, $"{cue.Key} 没有可解析的Clip引用。", cue.Key, context));
             }
         }
     }

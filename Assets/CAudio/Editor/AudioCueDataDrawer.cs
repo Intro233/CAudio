@@ -110,9 +110,37 @@ namespace CAudio.EditorTools
         private GUIContent ResolveTitle(SerializedProperty property, GUIContent fallback)
         {
             SerializedProperty keyProp = property.FindPropertyRelative("key");
+            SerializedProperty nameProp = property.FindPropertyRelative("displayName");
+            SerializedProperty groupProp = property.FindPropertyRelative("group");
+            SerializedProperty channelProp = property.FindPropertyRelative("channel");
+            SerializedProperty clipsProp = property.FindPropertyRelative("clips");
+
             if (keyProp != null && !string.IsNullOrWhiteSpace(keyProp.stringValue))
             {
-                return new GUIContent(keyProp.stringValue);
+                string title = keyProp.stringValue;
+                if (nameProp != null && !string.IsNullOrWhiteSpace(nameProp.stringValue))
+                {
+                    title += $"  ·  {nameProp.stringValue}";
+                }
+
+                if (groupProp != null && !string.IsNullOrWhiteSpace(groupProp.stringValue))
+                {
+                    title += $"  ·  {groupProp.stringValue}";
+                }
+
+                if (channelProp != null &&
+                    channelProp.enumValueIndex >= 0 &&
+                    channelProp.enumValueIndex < channelProp.enumDisplayNames.Length)
+                {
+                    title += $"  ·  {channelProp.enumDisplayNames[channelProp.enumValueIndex]}";
+                }
+
+                if (clipsProp != null)
+                {
+                    title += $"  ·  {clipsProp.arraySize} Clip";
+                }
+
+                return new GUIContent(title);
             }
 
             return fallback;
