@@ -1,0 +1,29 @@
+{
+  "name": "com.caudio.core",
+  "displayName": "CAudio",
+  "version": "0.3.0",
+  "unity": "2022.3",
+  "description": "A lightweight data-driven audio system for Unity with AudioDatabase, cue playback, mixer control, editor tooling, optional Addressables support, and EditMode tests.",
+  "license": "MIT",
+  "author": {
+    "name": "Intro233"
+  },
+  "keywords": [
+    "audio",
+    "sound",
+    "music",
+    "sfx",
+    "mixer",
+    "unity"
+  ],
+  "dependencies": {
+    "com.unity.ugui": "1.0.0"
+  },
+  "samples": [
+    {
+      "displayName": "Feature Showcase",
+      "description": "A uGUI scene that demonstrates CAudio playback, selection modes, music, looping ambience, spatial playback, follow playback, stop controls, channel controls, cue limits, pool limits, and validation-friendly database setup.",
+      "path": "Samples~/Feature Showcase"
+    }
+  ]
+}

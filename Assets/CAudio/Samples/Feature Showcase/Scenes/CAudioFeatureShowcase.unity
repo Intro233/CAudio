@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 326020665}
   - component: {fileID: 326020664}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: CAudio Feature Showcase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -148,17 +148,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 326020663}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e8d5e1ca3af448e92e72ff42584a88c, type: 3}
+  m_Script: {fileID: 11500000, guid: c0a1d0a5000000000000000000000005, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  database: {fileID: 11400000, guid: 38d36ed8a27aaf64195479fb97e441a4, type: 2}
+  database: {fileID: 11400000, guid: c0a1d0a4000000000000000000000004, type: 2}
+  directClip: {fileID: 8300000, guid: c0a1d0a1000000000000000000000001, type: 3}
   followTarget: {fileID: 0}
-  directClip: {fileID: 0}
-  sfxKey: sfx_click
-  uiKey: ui_click
-  musicKey: music_theme
-  voiceKey: voice_line
-  ambienceKey: ambience_loop
 --- !u!4 &326020665
 Transform:
   m_ObjectHideFlags: 0

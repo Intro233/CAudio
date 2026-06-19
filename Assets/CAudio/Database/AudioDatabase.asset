@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AudioDatabase
   m_EditorClassIdentifier: 
   cues:
-  - key: ui_click
+  - key: "\u6309\u94AE"
     displayName: "\u6309\u94AE"
     group: 
     channel: 5

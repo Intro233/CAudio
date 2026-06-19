@@ -1,0 +1,291 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 187f077ef08d3994eb24a8382f15e0b5, type: 3}
+  m_Name: CAudioSampleDatabase
+  m_EditorClassIdentifier: 
+  cues:
+  - key: ui_click
+    displayName: UI Click
+    group: ui
+    channel: 5
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.75, y: 0.95}
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0
+    fadeOutTime: 0.08
+    cooldown: 0.05
+    maxSimultaneous: 2
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 128
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: sfx_random
+    displayName: Random SFX
+    group: combat
+    channel: 2
+    selectionMode: 1
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 3
+    volumeRange: {x: 0.75, y: 1}
+    pitchRange: {x: 0.8, y: 1.25}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0
+    fadeOutTime: 0.1
+    cooldown: 0
+    maxSimultaneous: 0
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 128
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: sfx_sequence
+    displayName: Sequential SFX
+    group: combat
+    channel: 2
+    selectionMode: 2
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.8, y: 1}
+    pitchRange: {x: 0.92, y: 1.08}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0
+    fadeOutTime: 0.1
+    cooldown: 0
+    maxSimultaneous: 0
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 128
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: sfx_limited
+    displayName: Cooldown And Limit
+    group: combat
+    channel: 2
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 1, y: 1}
+    pitchRange: {x: 1, y: 1}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0
+    fadeOutTime: 0.1
+    cooldown: 0.75
+    maxSimultaneous: 1
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 128
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: sfx_3d
+    displayName: 3D SFX
+    group: spatial
+    channel: 2
+    selectionMode: 4
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.85, y: 1}
+    pitchRange: {x: 0.9, y: 1.1}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0
+    fadeOutTime: 0.1
+    cooldown: 0
+    maxSimultaneous: 0
+    spatialBlend: 1
+    minDistance: 1
+    maxDistance: 18
+    priority: 128
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: voice_line
+    displayName: Voice Ducking
+    group: voice
+    channel: 3
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.9, y: 1}
+    pitchRange: {x: 0.72, y: 0.86}
+    loop: 0
+    replaceSameChannel: 0
+    fadeInTime: 0.03
+    fadeOutTime: 0.2
+    cooldown: 0
+    maxSimultaneous: 1
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 96
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: ambience_loop
+    displayName: Ambience Loop
+    group: ambience
+    channel: 4
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.35, y: 0.45}
+    pitchRange: {x: 0.92, y: 0.96}
+    loop: 1
+    replaceSameChannel: 1
+    fadeInTime: 0.75
+    fadeOutTime: 0.75
+    cooldown: 0
+    maxSimultaneous: 1
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 160
+    outputGroup: {fileID: 7783974692672988410, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: music_theme
+    displayName: Theme Music
+    group: music
+    channel: 1
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.8, y: 0.8}
+    pitchRange: {x: 1, y: 1}
+    loop: 1
+    replaceSameChannel: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.8
+    cooldown: 0
+    maxSimultaneous: 1
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 180
+    outputGroup: {fileID: 7783974692672988410, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: music_alt
+    displayName: Alternate Music
+    group: music
+    channel: 1
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: b0714cb950d32244d861102ba863cd65, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.7, y: 0.7}
+    pitchRange: {x: 1.04, y: 1.04}
+    loop: 1
+    replaceSameChannel: 1
+    fadeInTime: 0.5
+    fadeOutTime: 0.8
+    cooldown: 0
+    maxSimultaneous: 1
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 180
+    outputGroup: {fileID: 7783974692672988410, guid: c0a1d0a3000000000000000000000003, type: 2}
+  - key: pool_loop
+    displayName: Pool Limit Loop
+    group: stress
+    channel: 2
+    selectionMode: 0
+    clips:
+    - clip:
+        directClip: {fileID: 8300000, guid: 5a794dc3ac09da642be6b39482b105a4, type: 3}
+        addressKey: 
+      weight: 1
+    volumeRange: {x: 0.45, y: 0.55}
+    pitchRange: {x: 0.9, y: 1.1}
+    loop: 1
+    replaceSameChannel: 0
+    fadeInTime: 0.05
+    fadeOutTime: 0.25
+    cooldown: 0
+    maxSimultaneous: 0
+    spatialBlend: 0
+    minDistance: 1
+    maxDistance: 50
+    priority: 200
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+  cueAssets: []
+  buses:
+  - channel: 1
+    outputGroup: {fileID: 7783974692672988410, guid: c0a1d0a3000000000000000000000003, type: 2}
+    volume: 0.8
+    mute: 0
+  - channel: 2
+    outputGroup: {fileID: -5488756917382321802, guid: c0a1d0a3000000000000000000000003, type: 2}
+    volume: 1
+    mute: 0
+  - channel: 3
+    outputGroup: {fileID: 6002092087830795994, guid: c0a1d0a3000000000000000000000003, type: 2}
+    volume: 1
+    mute: 0
+  - channel: 4
+    outputGroup: {fileID: 7783974692672988410, guid: c0a1d0a3000000000000000000000003, type: 2}
+    volume: 0.55
+    mute: 0
+  - channel: 5
+    outputGroup: {fileID: -6875923307879279450, guid: c0a1d0a3000000000000000000000003, type: 2}
+    volume: 0.85
+    mute: 0
+  debugSettings:
+    logLevel: 2
+    logSuccessfulPlay: 0
+  mixerSettings:
+    mixer: {fileID: 24100000, guid: c0a1d0a3000000000000000000000003, type: 2}
+    volumeParameters: []
+    enableVoiceDucking: 1
+    duckMusicVolume: 0.35
+    duckFadeSpeed: 8
+  poolSettings:
+    prewarmCount: 3
+    maxSourceCount: 6

@@ -42,6 +42,16 @@ Assets/CAudio/
 
 ## 安装
 
+### Package Manager Git URL
+
+当前仓库仍然是完整 Unity 工程，UPM 包根目录在 `Assets/CAudio`。在 Unity 的 `Window/Package Manager` 中点击 `+`，选择 `Add package from git URL...`，输入：
+
+```text
+https://github.com/<user>/<repo>.git?path=/Assets/CAudio#master
+```
+
+包内提供可导入示例 `Feature Showcase`。安装包后，可在 Package Manager 的 Samples 区域点击 `Import`。
+
 ### 直接复制
 
 把 `Assets/CAudio` 复制到目标 Unity 项目的 `Assets` 目录即可。运行时核心不强依赖 Addressables。

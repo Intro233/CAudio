@@ -8,6 +8,7 @@ This checklist tracks the evidence required before marking the full iteration go
 - EditMode tests pass and produce `TestResults.xml`.
 - `git diff --check` passes.
 - README, quick start, changelog, version file, samples, runtime/editor/test assembly definitions are present.
+- `Assets/CAudio/package.json`, package README, package changelog, and package license are present.
 - Editor window can be opened without GUILayout state errors.
 
 ## Verification Commands
@@ -22,6 +23,18 @@ Static check:
 
 ```powershell
 git diff --check
+```
+
+UPM package metadata check:
+
+```powershell
+Get-Content "Assets\CAudio\package.json" -Raw | ConvertFrom-Json
+```
+
+Package Manager Git URL format:
+
+```text
+https://github.com/<user>/<repo>.git?path=/Assets/CAudio#master
 ```
 
 ## Iteration 3 Evidence
@@ -66,6 +79,14 @@ git diff --check
 - `VERSION`.
 - Runtime, Editor, and EditMode test asmdefs.
 - `Assets/CAudio/Samples` with `CAudioSampleController`.
+
+## Package Evidence
+
+- `Assets/CAudio/package.json` defines `com.caudio.core` version `0.3.0`.
+- `Assets/CAudio/README.md`, `CHANGELOG.md`, `LICENSE.md`, and `Documentation~/index.md` are present.
+- The package can be installed from a Git URL using `?path=/Assets/CAudio#master`.
+- `Assets/CAudio/package.json` registers the `Feature Showcase` importable sample.
+- Addressables remains optional through `CAudio.Runtime.asmdef` `versionDefines`.
 
 ## Latest Verification
 

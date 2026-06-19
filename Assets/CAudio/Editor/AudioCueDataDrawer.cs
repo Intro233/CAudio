@@ -9,6 +9,14 @@ namespace CAudio.EditorTools
     public sealed class AudioCueDataDrawer : PropertyDrawer
     {
         private const float Spacing = 2f;
+        private static readonly GUIContent[] SelectionModeLabels =
+        {
+            new GUIContent("随机"),
+            new GUIContent("加权随机"),
+            new GUIContent("顺序播放"),
+            new GUIContent("洗牌播放"),
+            new GUIContent("避免连续重复")
+        };
 
         /// <summary>绘制属性。</summary>
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -26,7 +34,7 @@ namespace CAudio.EditorTools
             DrawProperty(ref position, property, "displayName", "显示名");
             DrawProperty(ref position, property, "group", "分组");
             DrawProperty(ref position, property, "channel", "通道");
-            DrawProperty(ref position, property, "selectionMode", "选择方式");
+            DrawSelectionMode(ref position, property);
             DrawProperty(ref position, property, "clips", "剪辑", true);
             DrawProperty(ref position, property, "volumeRange", "音量范围");
             DrawProperty(ref position, property, "pitchRange", "音调范围");
@@ -89,6 +97,21 @@ namespace CAudio.EditorTools
             Rect rect = new Rect(position.x, position.y, position.width, height);
             EditorGUI.PropertyField(rect, child, new GUIContent(displayName), includeChildren);
             position.y += height + Spacing;
+        }
+
+        /// <summary>绘制剪辑选择方式。</summary>
+        private void DrawSelectionMode(ref Rect position, SerializedProperty property)
+        {
+            SerializedProperty child = property.FindPropertyRelative("selectionMode");
+            if (child == null)
+            {
+                return;
+            }
+
+            Rect rect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+            int index = Mathf.Clamp(child.enumValueIndex, 0, SelectionModeLabels.Length - 1);
+            child.enumValueIndex = EditorGUI.Popup(rect, new GUIContent("选择方式"), index, SelectionModeLabels);
+            position.y += EditorGUIUtility.singleLineHeight + Spacing;
         }
 
         /// <summary>获取单个子属性高度。</summary>
